@@ -55,7 +55,7 @@ async function initStreetView() {
       position: position,
 
       pov: {
-        heading: 90,
+        heading: 24,
         pitch: 0,
       },
 
