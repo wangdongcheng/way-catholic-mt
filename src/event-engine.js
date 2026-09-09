@@ -13,13 +13,28 @@ export function createEventEngine({
   const targetPositions = new Map();
 
   async function resolveTargetPosition(event) {
-    if (!event.targetPano) {
+    const hasCoordinates =
+      Number.isFinite(event.lat) &&
+      Number.isFinite(event.lng);
+
+    if (hasCoordinates) {
+      targetPositions.set(event.id, {
+        lat: event.lat,
+        lng: event.lng,
+      });
+      return;
+    }
+
+    if (!event.pano) {
+      console.warn(
+        `Event ${event.id} has no valid lat/lng or pano and will be skipped.`
+      );
       return;
     }
 
     try {
       const response = await streetViewService.getPanorama({
-        pano: event.targetPano,
+        pano: event.pano,
       });
 
       const latLng = response.data?.location?.latLng;
@@ -33,7 +48,10 @@ export function createEventEngine({
         lng: latLng.lng(),
       });
     } catch (error) {
-      console.error(`Failed to load target panorama for event ${event.id}:`, error);
+      console.error(
+        `Failed to load target panorama for event ${event.id}:`,
+        error
+      );
     }
   }
 
