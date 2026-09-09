@@ -21,7 +21,7 @@ const START_STATE = {
 
 const MSPCA_EVENT = {
   pano: "D0PUR3k2NOAC-WeWHmp43w",
-  radius: 30,
+  radius: 50,
   headingMin: 340,
   headingMax: 40,
   message: "MSPCA is ahead",
