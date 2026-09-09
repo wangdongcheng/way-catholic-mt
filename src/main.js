@@ -32,6 +32,43 @@ let locationLookupTimer = null;
 let mspcaEventTriggered = false;
 let mspcaTargetPosition = null;
 
+function getUrlCoordinates() {
+  const searchParams = new URLSearchParams(window.location.search);
+  let lat = Number(searchParams.get("lat"));
+  let lng = Number(searchParams.get("lng"));
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    const pathParams = new URLSearchParams(
+      window.location.pathname.replace(/^\//, "")
+    );
+
+    lat = Number(pathParams.get("lat"));
+    lng = Number(pathParams.get("lng"));
+  }
+
+  if (
+    !Number.isFinite(lat) ||
+    !Number.isFinite(lng) ||
+    lat < -90 ||
+    lat > 90 ||
+    lng < -180 ||
+    lng > 180
+  ) {
+    return null;
+  }
+
+  return { lat, lng };
+}
+
+function getInitialState() {
+  const urlPosition = getUrlCoordinates();
+
+  return {
+    ...START_STATE,
+    position: urlPosition || START_STATE.position,
+  };
+}
+
 function showInfoTemporarily() {
   const info = document.getElementById("current-info");
 
@@ -246,16 +283,16 @@ async function loadMspcaTargetPosition(
   }
 }
 
-function restartRoute(panorama) {
+function restartRoute(panorama, initialState) {
   mspcaEventTriggered = false;
   hideRouteMessage();
 
-  panorama.setPosition(START_STATE.position);
+  panorama.setPosition(initialState.position);
   panorama.setPov({
-    heading: START_STATE.heading,
-    pitch: START_STATE.pitch,
+    heading: initialState.heading,
+    pitch: initialState.pitch,
   });
-  panorama.setZoom(START_STATE.zoom);
+  panorama.setZoom(initialState.zoom);
 }
 
 async function initStreetView() {
@@ -269,16 +306,17 @@ async function initStreetView() {
 
   const geocoder = new Geocoder();
   const streetViewService = new StreetViewService();
+  const initialState = getInitialState();
 
   const panorama = new StreetViewPanorama(
     document.getElementById("street-view"),
     {
-      position: START_STATE.position,
+      position: initialState.position,
       pov: {
-        heading: START_STATE.heading,
-        pitch: START_STATE.pitch,
+        heading: initialState.heading,
+        pitch: initialState.pitch,
       },
-      zoom: START_STATE.zoom,
+      zoom: initialState.zoom,
     }
   );
 
@@ -310,7 +348,7 @@ async function initStreetView() {
     document.getElementById("restart-button");
 
   restartButton?.addEventListener("click", () => {
-    restartRoute(panorama);
+    restartRoute(panorama, initialState);
     showInfoTemporarily();
   });
 
