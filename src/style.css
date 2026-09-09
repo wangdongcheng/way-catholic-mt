@@ -28,6 +28,14 @@ body {
   font-size: 14px;
   line-height: 1.6;
   text-align: left;
+
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+#current-info.hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
 #current-pano {
