@@ -34,17 +34,15 @@ let mspcaTargetPosition = null;
 
 function getUrlCoordinates() {
   const searchParams = new URLSearchParams(window.location.search);
-  let lat = Number(searchParams.get("lat"));
-  let lng = Number(searchParams.get("lng"));
+  const latParam = searchParams.get("lat");
+  const lngParam = searchParams.get("lng");
 
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-    const pathParams = new URLSearchParams(
-      window.location.pathname.replace(/^\//, "")
-    );
-
-    lat = Number(pathParams.get("lat"));
-    lng = Number(pathParams.get("lng"));
+  if (latParam === null || lngParam === null) {
+    return null;
   }
+
+  const lat = Number(latParam);
+  const lng = Number(lngParam);
 
   if (
     !Number.isFinite(lat) ||
