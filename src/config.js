@@ -11,7 +11,7 @@ export const START_STATE = {
 export const EVENTS = [
   {
     id: "mspca-ahead",
-    targetPano: "D0PUR3k2NOAC-WeWHmp43w",
+    pano: "D0PUR3k2NOAC-WeWHmp43w",
     radius: 50,
     headingMin: 340,
     headingMax: 40,
