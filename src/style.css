@@ -50,34 +50,28 @@ body {
 }
 
 #route-message {
-  position: fixed;
-  top: 120px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1100;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
 
+#route-message::backdrop {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+#route-message-panel {
   display: flex;
   align-items: center;
   gap: 12px;
 
   padding: 14px 16px;
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.88);
+  background: rgba(0, 0, 0, 0.92);
   color: white;
 
   font-family: Arial, sans-serif;
   font-size: 16px;
   font-weight: 700;
-
-  opacity: 1;
-  visibility: visible;
-  transition: opacity 0.2s ease;
-}
-
-#route-message.hidden {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
 }
 
 #route-message-ok {

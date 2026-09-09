@@ -94,20 +94,28 @@ export function scheduleLocationUpdate(panorama, geocoder) {
 }
 
 export function showRouteMessage(message) {
-  const messageElement = document.getElementById("route-message");
+  const dialog = document.getElementById("route-message");
   const textElement = document.getElementById("route-message-text");
 
-  if (!messageElement || !textElement) {
+  if (!(dialog instanceof HTMLDialogElement) || !textElement) {
     return;
   }
 
   textElement.textContent = message;
-  messageElement.classList.remove("hidden");
+
+  if (!dialog.open) {
+    dialog.showModal();
+  }
+
+  document.getElementById("route-message-ok")?.focus();
 }
 
 export function hideRouteMessage() {
-  document.getElementById("route-message")
-    ?.classList.add("hidden");
+  const dialog = document.getElementById("route-message");
+
+  if (dialog instanceof HTMLDialogElement && dialog.open) {
+    dialog.close();
+  }
 }
 
 export function bindUiActions({ onRestart, onMessageOk }) {
@@ -116,4 +124,9 @@ export function bindUiActions({ onRestart, onMessageOk }) {
 
   document.getElementById("route-message-ok")
     ?.addEventListener("click", onMessageOk);
+
+  document.getElementById("route-message")
+    ?.addEventListener("cancel", (event) => {
+      event.preventDefault();
+    });
 }

@@ -18,10 +18,12 @@
     <div>Location: <span id="current-location">-</span></div>
   </div>
 
-  <div id="route-message" class="hidden" role="status" aria-live="polite">
-    <span id="route-message-text"></span>
-    <button id="route-message-ok" type="button">OK</button>
-  </div>
+  <dialog id="route-message" aria-labelledby="route-message-text">
+    <div id="route-message-panel">
+      <span id="route-message-text"></span>
+      <button id="route-message-ok" type="button">OK</button>
+    </div>
+  </dialog>
 
   <button id="restart-button" type="button" aria-label="Restart route">
     ↺ Restart
