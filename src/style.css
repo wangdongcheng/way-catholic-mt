@@ -49,46 +49,6 @@ body {
   vertical-align: bottom;
 }
 
-#startup-sign {
-  position: fixed;
-  left: 22px;
-  top: 50%;
-  z-index: 1000;
-  pointer-events: none;
-
-  transform: translateY(-50%);
-  animation: startup-sign 5s ease forwards;
-}
-
-#startup-sign img {
-  display: block;
-  width: clamp(90px, 10vw, 140px);
-  height: auto;
-}
-
-@keyframes startup-sign {
-  0% {
-    opacity: 0;
-    transform: translate(-36px, -50%) scale(0.92);
-  }
-
-  10% {
-    opacity: 1;
-    transform: translate(0, -50%) scale(1);
-  }
-
-  86% {
-    opacity: 1;
-    transform: translate(0, -50%) scale(1);
-  }
-
-  100% {
-    opacity: 0;
-    transform: translate(-12px, -50%) scale(0.98);
-    visibility: hidden;
-  }
-}
-
 #restart-button {
   position: fixed;
   left: 20px;
