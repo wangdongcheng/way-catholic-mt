@@ -19,6 +19,23 @@ const START_STATE = {
   zoom: 1,
 };
 
+let infoHideTimer = null;
+
+function showInfoTemporarily() {
+  const info = document.getElementById("current-info");
+
+  if (!info) {
+    return;
+  }
+
+  info.classList.remove("hidden");
+  clearTimeout(infoHideTimer);
+
+  infoHideTimer = setTimeout(() => {
+    info.classList.add("hidden");
+  }, 10000);
+}
+
 function updatePanoramaInfo(panorama) {
   const position = panorama.getPosition();
   const pano = panorama.getPano();
@@ -75,14 +92,17 @@ async function initStreetView() {
 
   panorama.addListener("position_changed", () => {
     updatePanoramaInfo(panorama);
+    showInfoTemporarily();
   });
 
   panorama.addListener("pano_changed", () => {
     updatePanoramaInfo(panorama);
+    showInfoTemporarily();
   });
 
   panorama.addListener("pov_changed", () => {
     updatePanoramaInfo(panorama);
+    showInfoTemporarily();
   });
 
   const restartButton =
@@ -90,9 +110,11 @@ async function initStreetView() {
 
   restartButton?.addEventListener("click", () => {
     restartRoute(panorama);
+    showInfoTemporarily();
   });
 
   updatePanoramaInfo(panorama);
+  showInfoTemporarily();
 }
 
 initStreetView();
