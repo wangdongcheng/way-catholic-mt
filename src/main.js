@@ -9,6 +9,15 @@ setOptions({
   key: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
 });
 
+const START_STATE = {
+  position: {
+    lat: 35.8880832,
+    lng: 14.5029997,
+  },
+  heading: 24,
+  pitch: 0,
+  zoom: 1,
+};
 
 function updatePanoramaInfo(panorama) {
   const position = panorama.getPosition();
@@ -39,27 +48,28 @@ function updatePanoramaInfo(panorama) {
   }
 }
 
+function restartRoute(panorama) {
+  panorama.setPosition(START_STATE.position);
+  panorama.setPov({
+    heading: START_STATE.heading,
+    pitch: START_STATE.pitch,
+  });
+  panorama.setZoom(START_STATE.zoom);
+}
 
 async function initStreetView() {
   const { StreetViewPanorama } =
     await importLibrary("streetView");
 
-  const position = {
-    lat: 35.8880832,
-    lng: 14.5029997,
-  };
-
   const panorama = new StreetViewPanorama(
     document.getElementById("street-view"),
     {
-      position: position,
-
+      position: START_STATE.position,
       pov: {
-        heading: 24,
-        pitch: 0,
+        heading: START_STATE.heading,
+        pitch: START_STATE.pitch,
       },
-
-      zoom: 1,
+      zoom: START_STATE.zoom,
     }
   );
 
@@ -75,8 +85,14 @@ async function initStreetView() {
     updatePanoramaInfo(panorama);
   });
 
+  const restartButton =
+    document.getElementById("restart-button");
+
+  restartButton?.addEventListener("click", () => {
+    restartRoute(panorama);
+  });
+
   updatePanoramaInfo(panorama);
 }
-
 
 initStreetView();
