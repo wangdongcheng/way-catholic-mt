@@ -19,8 +19,18 @@ const START_STATE = {
   zoom: 1,
 };
 
+const MSPCA_EVENT = {
+  pano: "D0PUR3k2NOAC-WeWHmp43w",
+  radius: 30,
+  headingMin: 340,
+  headingMax: 40,
+  message: "MSPCA is ahead",
+};
+
 let infoHideTimer = null;
 let locationLookupTimer = null;
+let mspcaEventTriggered = false;
+let mspcaTargetPosition = null;
 
 function showInfoTemporarily() {
   const info = document.getElementById("current-info");
@@ -123,7 +133,123 @@ function scheduleLocationUpdate(panorama, geocoder) {
   }, 300);
 }
 
+function normalizeHeading(heading) {
+  return ((heading % 360) + 360) % 360;
+}
+
+function isHeadingInRange(heading, min, max) {
+  const normalizedHeading = normalizeHeading(heading);
+  const normalizedMin = normalizeHeading(min);
+  const normalizedMax = normalizeHeading(max);
+
+  if (normalizedMin <= normalizedMax) {
+    return normalizedHeading >= normalizedMin &&
+      normalizedHeading <= normalizedMax;
+  }
+
+  return normalizedHeading >= normalizedMin ||
+    normalizedHeading <= normalizedMax;
+}
+
+function calculateDistanceMeters(from, to) {
+  const earthRadius = 6371000;
+  const toRadians = (degrees) => degrees * Math.PI / 180;
+
+  const lat1 = toRadians(from.lat());
+  const lat2 = toRadians(to.lat);
+  const deltaLat = toRadians(to.lat - from.lat());
+  const deltaLng = toRadians(to.lng - from.lng());
+
+  const a =
+    Math.sin(deltaLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) *
+    Math.sin(deltaLng / 2) ** 2;
+
+  return earthRadius * 2 * Math.atan2(
+    Math.sqrt(a),
+    Math.sqrt(1 - a)
+  );
+}
+
+function showRouteMessage(message) {
+  const messageElement =
+    document.getElementById("route-message");
+  const textElement =
+    document.getElementById("route-message-text");
+
+  if (!messageElement || !textElement) {
+    return;
+  }
+
+  textElement.textContent = message;
+  messageElement.classList.remove("hidden");
+}
+
+function hideRouteMessage() {
+  document.getElementById("route-message")
+    ?.classList.add("hidden");
+}
+
+function checkMspcaEvent(panorama) {
+  if (mspcaEventTriggered || !mspcaTargetPosition) {
+    return;
+  }
+
+  const position = panorama.getPosition();
+  const heading = panorama.getPov()?.heading;
+
+  if (!position || heading === undefined) {
+    return;
+  }
+
+  const distance = calculateDistanceMeters(
+    position,
+    mspcaTargetPosition
+  );
+
+  if (
+    distance <= MSPCA_EVENT.radius &&
+    isHeadingInRange(
+      heading,
+      MSPCA_EVENT.headingMin,
+      MSPCA_EVENT.headingMax
+    )
+  ) {
+    mspcaEventTriggered = true;
+    showRouteMessage(MSPCA_EVENT.message);
+  }
+}
+
+async function loadMspcaTargetPosition(
+  streetViewService,
+  panorama
+) {
+  try {
+    const response = await streetViewService.getPanorama({
+      pano: MSPCA_EVENT.pano,
+    });
+
+    const latLng = response.data?.location?.latLng;
+
+    if (!latLng) {
+      return;
+    }
+
+    mspcaTargetPosition = {
+      lat: latLng.lat(),
+      lng: latLng.lng(),
+    };
+
+    checkMspcaEvent(panorama);
+  } catch (error) {
+    console.error("Failed to load MSPCA target panorama:", error);
+  }
+}
+
 function restartRoute(panorama) {
+  mspcaEventTriggered = false;
+  hideRouteMessage();
+
   panorama.setPosition(START_STATE.position);
   panorama.setPov({
     heading: START_STATE.heading,
@@ -133,13 +259,16 @@ function restartRoute(panorama) {
 }
 
 async function initStreetView() {
-  const { StreetViewPanorama } =
-    await importLibrary("streetView");
+  const {
+    StreetViewPanorama,
+    StreetViewService,
+  } = await importLibrary("streetView");
 
   const { Geocoder } =
     await importLibrary("geocoding");
 
   const geocoder = new Geocoder();
+  const streetViewService = new StreetViewService();
 
   const panorama = new StreetViewPanorama(
     document.getElementById("street-view"),
@@ -153,20 +282,28 @@ async function initStreetView() {
     }
   );
 
+  loadMspcaTargetPosition(
+    streetViewService,
+    panorama
+  );
+
   panorama.addListener("position_changed", () => {
     updatePanoramaInfo(panorama);
     scheduleLocationUpdate(panorama, geocoder);
     showInfoTemporarily();
+    checkMspcaEvent(panorama);
   });
 
   panorama.addListener("pano_changed", () => {
     updatePanoramaInfo(panorama);
     showInfoTemporarily();
+    checkMspcaEvent(panorama);
   });
 
   panorama.addListener("pov_changed", () => {
     updatePanoramaInfo(panorama);
     showInfoTemporarily();
+    checkMspcaEvent(panorama);
   });
 
   const restartButton =
@@ -175,6 +312,13 @@ async function initStreetView() {
   restartButton?.addEventListener("click", () => {
     restartRoute(panorama);
     showInfoTemporarily();
+  });
+
+  const messageOkButton =
+    document.getElementById("route-message-ok");
+
+  messageOkButton?.addEventListener("click", () => {
+    hideRouteMessage();
   });
 
   updatePanoramaInfo(panorama);
