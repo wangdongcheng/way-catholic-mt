@@ -20,6 +20,7 @@ const START_STATE = {
 };
 
 let infoHideTimer = null;
+let locationLookupTimer = null;
 
 function showInfoTemporarily() {
   const info = document.getElementById("current-info");
@@ -65,6 +66,63 @@ function updatePanoramaInfo(panorama) {
   }
 }
 
+function getAddressComponent(result, type) {
+  return result.address_components?.find((component) =>
+    component.types.includes(type)
+  )?.long_name;
+}
+
+async function updateLocationInfo(panorama, geocoder) {
+  const position = panorama.getPosition();
+  const locationElement =
+    document.getElementById("current-location");
+
+  if (!position || !locationElement) {
+    return;
+  }
+
+  try {
+    const response = await geocoder.geocode({
+      location: {
+        lat: position.lat(),
+        lng: position.lng(),
+      },
+    });
+
+    const result = response.results?.[0];
+
+    if (!result) {
+      locationElement.textContent = "-";
+      return;
+    }
+
+    const road =
+      getAddressComponent(result, "route");
+
+    const city =
+      getAddressComponent(result, "locality") ||
+      getAddressComponent(result, "postal_town") ||
+      getAddressComponent(result, "administrative_area_level_2") ||
+      getAddressComponent(result, "administrative_area_level_1");
+
+    locationElement.textContent =
+      [road, city].filter(Boolean).join(", ") ||
+      result.formatted_address ||
+      "-";
+  } catch (error) {
+    console.error("Failed to reverse geocode Street View position:", error);
+    locationElement.textContent = "-";
+  }
+}
+
+function scheduleLocationUpdate(panorama, geocoder) {
+  clearTimeout(locationLookupTimer);
+
+  locationLookupTimer = setTimeout(() => {
+    updateLocationInfo(panorama, geocoder);
+  }, 300);
+}
+
 function restartRoute(panorama) {
   panorama.setPosition(START_STATE.position);
   panorama.setPov({
@@ -77,6 +135,11 @@ function restartRoute(panorama) {
 async function initStreetView() {
   const { StreetViewPanorama } =
     await importLibrary("streetView");
+
+  const { Geocoder } =
+    await importLibrary("geocoding");
+
+  const geocoder = new Geocoder();
 
   const panorama = new StreetViewPanorama(
     document.getElementById("street-view"),
@@ -92,6 +155,7 @@ async function initStreetView() {
 
   panorama.addListener("position_changed", () => {
     updatePanoramaInfo(panorama);
+    scheduleLocationUpdate(panorama, geocoder);
     showInfoTemporarily();
   });
 
@@ -114,6 +178,7 @@ async function initStreetView() {
   });
 
   updatePanoramaInfo(panorama);
+  scheduleLocationUpdate(panorama, geocoder);
   showInfoTemporarily();
 }
 
