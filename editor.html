@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Edit route messages and examiner commands on a map." />
+  <title>Route Editor — The Way</title>
+</head>
+
+<body>
+  <main id="editor-app">
+    <header class="editor-toolbar">
+      <div class="brand-block">
+        <span class="eyebrow">The Way</span>
+        <h1>Route Editor</h1>
+      </div>
+
+      <label class="toolbar-field">
+        <span>Route</span>
+        <select id="route-selector">
+          <option value="route-001">Demo Route 1</option>
+          <option value="route-002">Demo Route 2</option>
+        </select>
+      </label>
+
+      <label class="toolbar-field route-name-field">
+        <span>Name</span>
+        <input id="route-name" type="text" />
+      </label>
+
+      <div class="toolbar-actions">
+        <button id="add-event-button" class="button primary" type="button">
+          + Add event
+        </button>
+        <button id="import-button" class="button" type="button">Import</button>
+        <button id="export-button" class="button" type="button">Export JSON</button>
+        <input id="import-file" type="file" accept="application/json,.json" hidden />
+      </div>
+    </header>
+
+    <section class="editor-workspace">
+      <div class="map-pane">
+        <div id="editor-map" aria-label="Route event map"></div>
+
+        <div class="map-legend" aria-label="Map legend">
+          <span><i class="legend-dot message"></i>Route message</span>
+          <span><i class="legend-dot command"></i>Examiner command</span>
+          <span><i class="legend-ring answer"></i>Answer range</span>
+          <span><i class="legend-wedge"></i>Heading</span>
+        </div>
+
+        <div id="placement-notice" class="placement-notice" hidden>
+          Click the map to place the event · Esc to cancel
+        </div>
+      </div>
+
+      <aside class="editor-sidebar">
+        <div class="sidebar-heading">
+          <div>
+            <span class="eyebrow">Selected event</span>
+            <h2 id="selected-event-title">Nothing selected</h2>
+          </div>
+          <span id="dirty-indicator" class="dirty-indicator">Saved source</span>
+        </div>
+
+        <div id="event-form" class="event-form">
+          <div class="empty-state">
+            Right-click the map to add an event, or select an existing marker.
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <footer class="editor-statusbar">
+      <span id="editor-status">Loading route…</span>
+      <button id="validation-toggle" type="button" class="status-button">
+        Validation: <span id="validation-summary">—</span>
+      </button>
+    </footer>
+  </main>
+
+  <div id="add-event-menu" class="context-menu" hidden>
+    <button type="button" data-create-type="route-message">Route message</button>
+    <button type="button" data-create-type="single">Single-choice command</button>
+    <button type="button" data-create-type="multiple">Multiple-choice command</button>
+    <button type="button" data-create-type="sequence">Sequence command</button>
+  </div>
+
+  <dialog id="validation-dialog">
+    <div class="dialog-header">
+      <h2>Route validation</h2>
+      <button id="validation-close" type="button" aria-label="Close">×</button>
+    </div>
+    <div id="validation-results"></div>
+  </dialog>
+
+  <div id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script type="module" src="/src/editor/editor-main.js"></script>
+</body>
+
+</html>
