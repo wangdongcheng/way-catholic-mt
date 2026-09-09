@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "coordinatePrecision": 5,
+  "shards": [
+    {
+      "file": "malta-001.json",
+      "bounds": {
+        "south": 35.75,
+        "west": 14.1,
+        "north": 36.1,
+        "east": 14.7
+      }
+    }
+  ]
+}

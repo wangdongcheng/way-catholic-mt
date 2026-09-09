@@ -1,3 +1,8 @@
+import {
+  findLocationInCache,
+  saveLocationToCache,
+} from "./location-cache.js";
+
 let infoHideTimer = null;
 let locationLookupTimer = null;
 let routeMessageTimer = null;
@@ -73,17 +78,42 @@ async function updateLocationInfo(panorama, geocoder) {
     return;
   }
 
+  const lookup = {
+    panoId: panorama.getPano() || "",
+    lat: position.lat(),
+    lng: position.lng(),
+  };
+  const isCurrentPosition = () => {
+    const currentPosition = panorama.getPosition();
+
+    return currentPosition &&
+      panorama.getPano() === lookup.panoId &&
+      currentPosition.lat().toFixed(5) === lookup.lat.toFixed(5) &&
+      currentPosition.lng().toFixed(5) === lookup.lng.toFixed(5);
+  };
+
   try {
+    const cached = await findLocationInCache(lookup);
+
+    if (cached) {
+      if (isCurrentPosition()) {
+        locationElement.textContent = cached.label;
+      }
+      return;
+    }
+
     const response = await geocoder.geocode({
       location: {
-        lat: position.lat(),
-        lng: position.lng(),
+        lat: lookup.lat,
+        lng: lookup.lng,
       },
     });
     const result = response.results?.[0];
 
     if (!result) {
-      locationElement.textContent = "-";
+      if (isCurrentPosition()) {
+        locationElement.textContent = "-";
+      }
       return;
     }
 
@@ -93,14 +123,24 @@ async function updateLocationInfo(panorama, geocoder) {
       getAddressComponent(result, "postal_town") ||
       getAddressComponent(result, "administrative_area_level_2") ||
       getAddressComponent(result, "administrative_area_level_1");
-
-    locationElement.textContent =
+    const label =
       [road, city].filter(Boolean).join(", ") ||
       result.formatted_address ||
       "-";
+
+    saveLocationToCache({
+      ...lookup,
+      label,
+    });
+
+    if (isCurrentPosition()) {
+      locationElement.textContent = label;
+    }
   } catch (error) {
     console.error("Failed to reverse geocode Street View position:", error);
-    locationElement.textContent = "-";
+    if (isCurrentPosition()) {
+      locationElement.textContent = "-";
+    }
   }
 }
 
