@@ -4,7 +4,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <title>The Way</title>
 </head>
 
@@ -12,6 +11,7 @@
   <div id="street-view"></div>
 
   <div id="current-info">
+    <div>Route: <span id="current-route">-</span></div>
     <div>Pos: <span id="current-pos">-</span></div>
     <div>Pano: <span id="current-pano">-</span></div>
     <div>Heading: <span id="camera-heading">-</span>°</div>
@@ -24,6 +24,27 @@
       <button id="route-message-ok" type="button">OK</button>
     </div>
   </dialog>
+
+  <section
+    id="examiner-command"
+    role="dialog"
+    aria-modal="false"
+    aria-labelledby="examiner-command-text"
+    hidden
+  >
+    <div id="examiner-header">Examiner</div>
+    <div id="examiner-command-text"></div>
+    <div id="examiner-options"></div>
+    <div id="examiner-actions" class="hidden">
+      <button id="examiner-undo" type="button">Undo</button>
+      <button id="examiner-reset" type="button">Reset</button>
+      <button id="examiner-confirm" type="button">Confirm</button>
+    </div>
+  </section>
+
+  <div id="penalty-status">
+    Penalty: <span id="penalty-score">0</span>
+  </div>
 
   <button id="restart-button" type="button" aria-label="Restart route">
     ↺ Restart

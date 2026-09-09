@@ -1,0 +1,78 @@
+{
+  "id": "route-001",
+  "name": "Demo Route 1 — Single Choice",
+  "startState": {
+    "lat": 35.8880832,
+    "lng": 14.5029997,
+    "heading": 24,
+    "pitch": 0,
+    "zoom": 1
+  },
+  "events": [
+    {
+      "id": "route-001-welcome",
+      "type": "route-message",
+      "lat": 35.8880832,
+      "lng": 14.5029997,
+      "radius": 20,
+      "message": "Demo Route 1 loaded. This route demonstrates a single-choice examiner command.",
+      "autoCloseMs": 5000,
+      "priority": "normal"
+    },
+    {
+      "id": "route-001-command",
+      "type": "examiner-command",
+      "lat": 35.8880832,
+      "lng": 14.5029997,
+      "pano": "D0PUR3k2NOAC-WeWHmp43w",
+      "radius": 20,
+      "answerRadius": 70,
+      "headingMin": 340,
+      "headingMax": 40,
+      "command": "At the next junction, which direction did the examiner ask you to take?",
+      "answerMode": "single",
+      "optionLayout": "single-column",
+      "options": [
+        {
+          "id": "left",
+          "label": "Turn left",
+          "correct": true,
+          "penalty": 0,
+          "routeMessage": {
+            "message": "Correct. Check your mirrors before changing direction.",
+            "autoCloseMs": 5000,
+            "priority": "high"
+          }
+        },
+        {
+          "id": "right",
+          "label": "Turn right",
+          "correct": false,
+          "penalty": 1,
+          "routeMessage": {
+            "message": "The examiner instructed you to turn left. 1 point deducted.",
+            "autoCloseMs": 0,
+            "priority": "high"
+          }
+        },
+        {
+          "id": "straight",
+          "label": "Continue straight",
+          "correct": false,
+          "penalty": 1,
+          "routeMessage": {
+            "message": "The examiner instructed you to turn left. 1 point deducted.",
+            "autoCloseMs": 0,
+            "priority": "high"
+          }
+        }
+      ],
+      "penaltyOnOutOfRange": 1,
+      "outOfRangeRouteMessage": {
+        "message": "You left the answering area without answering. 1 point deducted.",
+        "autoCloseMs": 0,
+        "priority": "high"
+      }
+    }
+  ]
+}

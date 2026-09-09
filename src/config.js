@@ -1,24 +1,7 @@
-export const START_STATE = {
-  position: {
-    lat: 35.8880832,
-    lng: 14.5029997,
-  },
-  heading: 24,
-  pitch: 0,
-  zoom: 1,
+export const APP_CONFIG = {
+  defaultRoute: "route-001",
+  routeBasePath: "/data/routes",
 };
-
-export const EVENTS = [
-  {
-    id: "mspca-ahead",
-    pano: "D0PUR3k2NOAC-WeWHmp43w",
-    radius: 50,
-    headingMin: 340,
-    headingMax: 40,
-    type: "message",
-    message: "MSPCA is ahead",
-  },
-];
 
 function getUrlCoordinates() {
   const searchParams = new URLSearchParams(window.location.search);
@@ -46,11 +29,41 @@ function getUrlCoordinates() {
   return { lat, lng };
 }
 
-export function getInitialState() {
+export function getRequestedRouteId() {
+  const routeId = new URLSearchParams(window.location.search)
+    .get("route");
+
+  return /^[a-z0-9-]+$/i.test(routeId || "")
+    ? routeId
+    : APP_CONFIG.defaultRoute;
+}
+
+export async function loadRouteConfig() {
+  const routeId = getRequestedRouteId();
+  const response = await fetch(
+    `${APP_CONFIG.routeBasePath}/${routeId}.json`
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to load route ${routeId}: ${response.status}`
+    );
+  }
+
+  return response.json();
+}
+
+export function getInitialState(route) {
+  const start = route.startState;
   const urlPosition = getUrlCoordinates();
 
   return {
-    ...START_STATE,
-    position: urlPosition || START_STATE.position,
+    position: urlPosition || {
+      lat: start.lat,
+      lng: start.lng,
+    },
+    heading: start.heading ?? 0,
+    pitch: start.pitch ?? 0,
+    zoom: start.zoom ?? 1,
   };
 }

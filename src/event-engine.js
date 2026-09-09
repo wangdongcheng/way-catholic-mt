@@ -52,17 +52,14 @@ export function createEventEngine({
       const response = await streetViewService.getPanorama({
         pano: event.pano,
       });
-
       const latLng = response.data?.location?.latLng;
 
-      if (!latLng) {
-        return;
+      if (latLng) {
+        cacheTargetPosition(event, {
+          lat: latLng.lat(),
+          lng: latLng.lng(),
+        });
       }
-
-      cacheTargetPosition(event, {
-        lat: latLng.lat(),
-        lng: latLng.lng(),
-      });
     } catch (error) {
       console.error(
         `Failed to load target panorama for event ${event.id}:`,
@@ -98,12 +95,9 @@ export function createEventEngine({
       ? event.radius
       : 0;
 
-    const distance = calculateDistanceMeters(
-      position,
-      targetPosition
-    );
-
-    if (distance > radius) {
+    if (
+      calculateDistanceMeters(position, targetPosition) > radius
+    ) {
       return false;
     }
 
@@ -115,11 +109,7 @@ export function createEventEngine({
       return true;
     }
 
-    if (heading === undefined) {
-      return false;
-    }
-
-    return isHeadingInRange(
+    return heading !== undefined && isHeadingInRange(
       heading,
       event.headingMin,
       event.headingMax
@@ -128,16 +118,15 @@ export function createEventEngine({
 
   function checkNearbyEvents() {
     for (const { event, position } of nearbyEntries) {
-      if (triggeredEvents.has(event.id)) {
-        continue;
-      }
-
-      if (!matchesEvent(event, position)) {
+      if (
+        triggeredEvents.has(event.id) ||
+        !matchesEvent(event, position)
+      ) {
         continue;
       }
 
       triggeredEvents.add(event.id);
-      onEvent(event);
+      onEvent(event, position);
     }
   }
 
