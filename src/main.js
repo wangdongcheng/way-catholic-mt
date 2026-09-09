@@ -40,19 +40,19 @@ async function initApp() {
     updatePanoramaInfo(panorama);
     scheduleLocationUpdate(panorama, geocoder);
     showInfoTemporarily();
-    eventEngine.checkEvents();
+    eventEngine.refreshAndCheck();
   });
 
   panorama.addListener("pano_changed", () => {
     updatePanoramaInfo(panorama);
     showInfoTemporarily();
-    eventEngine.checkEvents();
+    eventEngine.checkNearbyEvents();
   });
 
   panorama.addListener("pov_changed", () => {
     updatePanoramaInfo(panorama);
     showInfoTemporarily();
-    eventEngine.checkEvents();
+    eventEngine.checkNearbyEvents();
   });
 
   bindUiActions({
