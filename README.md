@@ -1,5 +1,7 @@
 # The Way
 
+![alt text](image.png)
+
 Route data is stored in `public/data/routes`.
 
 - Demo route 1: `?route=route-001`
