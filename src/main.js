@@ -352,6 +352,14 @@ async function initApp() {
     navigateToMode("exam", routeId);
   };
 
+  const showModeChooser = () => {
+    showModeSelection(AVAILABLE_ROUTES, {
+      selectedRouteId: requestedRouteId,
+      onPractice: () => navigateToMode("practice"),
+      onExam: selectExamRoute,
+    });
+  };
+
   panorama.addListener("position_changed", () => {
     if (!driveStarted) {
       return;
@@ -394,15 +402,14 @@ async function initApp() {
       totalPenalty = 0;
       eventEngine.reset();
       hideExaminerCommand();
+      hideExamStart();
       clearRouteMessages();
+      hideCurrentInfo();
       updatePenaltyScore(0);
+      setStreetViewLocked(panorama, true);
       restartStreetView(panorama, initialState);
-
-      if (mode === "exam") {
-        prepareExam();
-      } else if (mode === "practice") {
-        startDrive();
-      }
+      document.body.dataset.mode = "selection";
+      showModeChooser();
     },
   });
 
@@ -411,11 +418,7 @@ async function initApp() {
   } else if (mode === "practice") {
     await startDrive();
   } else {
-    showModeSelection(AVAILABLE_ROUTES, {
-      selectedRouteId: requestedRouteId,
-      onPractice: () => navigateToMode("practice"),
-      onExam: selectExamRoute,
-    });
+    showModeChooser();
   }
 }
 
