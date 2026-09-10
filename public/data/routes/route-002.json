@@ -1,0 +1,72 @@
+{
+  "id": "route-002",
+  "name": "Demo Route 2 — Five-Step Sequence",
+  "startState": {
+    "lat": 35.8880832,
+    "lng": 14.5029997,
+    "heading": 24,
+    "pitch": 0,
+    "zoom": 1
+  },
+  "events": [
+    {
+      "id": "route-002-sequence-command",
+      "type": "examiner-command",
+      "lat": 35.8880832,
+      "lng": 14.5029997,
+      "radius": 20,
+      "answerRadius": 70,
+      "headingMin": 340,
+      "headingMax": 40,
+      "command": "Select the five actions in the correct order before changing direction.",
+      "answerMode": "sequence",
+      "optionLayout": "single-column",
+      "options": [
+        {
+          "id": "speed",
+          "label": "Reduce speed"
+        },
+        {
+          "id": "mirrors",
+          "label": "Check mirrors"
+        },
+        {
+          "id": "look",
+          "label": "Check the road is clear"
+        },
+        {
+          "id": "signal",
+          "label": "Signal"
+        },
+        {
+          "id": "position",
+          "label": "Adjust position"
+        }
+      ],
+      "correctSequence": [
+        "mirrors",
+        "signal",
+        "position",
+        "speed",
+        "look"
+      ],
+      "penalty": 2,
+      "correctRouteMessage": {
+        "message": "Correct. All five steps were selected in the right order.",
+        "autoCloseMs": 5000,
+        "priority": "high"
+      },
+      "incorrectRouteMessage": {
+        "message": "The steps were not selected in the correct order. 2 points deducted.",
+        "autoCloseMs": 0,
+        "priority": "high"
+      },
+      "penaltyOnOutOfRange": 1,
+      "outOfRangeRouteMessage": {
+        "message": "You left the answering area before completing the sequence. 1 point deducted.",
+        "autoCloseMs": 0,
+        "priority": "high"
+      }
+    }
+  ]
+}

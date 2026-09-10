@@ -8,6 +8,7 @@ body,
 
 body {
   overflow: hidden;
+  font-family: Arial, sans-serif;
 }
 
 #current-info {
@@ -15,20 +16,14 @@ body {
   top: 20px;
   left: 50%;
   transform: translateX(-50%);
-
   z-index: 1000;
-
   padding: 12px 18px;
   border-radius: 10px;
-
   background: rgba(0, 0, 0, 0.8);
   color: white;
-
-  font-family: Arial, sans-serif;
   font-size: 14px;
   line-height: 1.6;
   text-align: left;
-
   opacity: 1;
   transition: opacity 0.3s ease;
 }
@@ -41,31 +36,183 @@ body {
 #current-pano {
   display: inline-block;
   max-width: 220px;
-
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-
   vertical-align: bottom;
 }
 
+#route-message {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+#route-message::backdrop {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+#route-message-panel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(620px, calc(100vw - 40px));
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.92);
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+#route-message-ok,
+#examiner-actions button {
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#examiner-command {
+  position: fixed;
+  top: 50%;
+  right: 20px;
+  z-index: 1100;
+  width: min(360px, calc(100vw - 40px));
+  max-height: 70vh;
+  box-sizing: border-box;
+  padding: 18px;
+  overflow-y: auto;
+  transform: translateY(-50%);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.94);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+  color: white;
+}
+
+#examiner-command[hidden],
+.hidden {
+  display: none !important;
+}
+
+#examiner-header {
+  margin-bottom: 8px;
+  color: #fbbf24;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+#examiner-command-text {
+  margin-bottom: 14px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+#examiner-options {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 9px;
+}
+
+#examiner-options[data-layout="two-columns"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.examiner-option {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.examiner-option:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.examiner-option.selected {
+  border-color: #38bdf8;
+  background: rgba(14, 165, 233, 0.28);
+}
+
+.examiner-option:disabled {
+  opacity: 0.8;
+  cursor: default;
+}
+
+.option-order {
+  display: inline-grid;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+#examiner-options[data-mode="single"] .option-order {
+  display: none;
+}
+
+.examiner-option.selected .option-order {
+  background: #38bdf8;
+  color: #082f49;
+}
+
+#examiner-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+#examiner-confirm {
+  background: #fbbf24;
+  color: #422006;
+}
+
+#examiner-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+#penalty-status,
 #restart-button {
   position: fixed;
   left: 20px;
-  bottom: 20px;
   z-index: 1000;
-
   padding: 10px 16px;
   border: 0;
   border-radius: 8px;
-
   background: rgba(0, 0, 0, 0.8);
   color: white;
-
-  font-family: Arial, sans-serif;
   font-size: 14px;
   font-weight: 700;
+}
 
+#penalty-status {
+  bottom: 68px;
+}
+
+#restart-button {
+  bottom: 20px;
   cursor: pointer;
 }
 
@@ -73,7 +220,101 @@ body {
   background: rgba(0, 0, 0, 0.9);
 }
 
-#restart-button:focus-visible {
+button:focus-visible {
   outline: 2px solid white;
   outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  #examiner-command {
+    top: auto;
+    right: 10px;
+    bottom: 10px;
+    left: 10px;
+    width: auto;
+    max-height: 55vh;
+    transform: none;
+  }
+
+  #examiner-options[data-layout="two-columns"] {
+    grid-template-columns: 1fr;
+  }
+}
+
+#exam-start-dialog {
+  width: min(560px, calc(100vw - 32px));
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+}
+
+#exam-start-dialog::backdrop {
+  background: rgba(5, 12, 24, 0.58);
+  backdrop-filter: blur(2px);
+}
+
+#exam-start-panel {
+  padding: 28px;
+  background: rgba(15, 23, 42, 0.97);
+  color: white;
+}
+
+#exam-start-eyebrow {
+  margin-bottom: 7px;
+  color: #fbbf24;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+#exam-start-title {
+  margin: 0 0 18px;
+  font-size: clamp(24px, 4vw, 34px);
+  line-height: 1.15;
+}
+
+#exam-start-items {
+  display: grid;
+  gap: 11px;
+  margin: 0 0 24px;
+  padding-left: 22px;
+  color: #e2e8f0;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+#exam-start-items li::marker {
+  color: #fbbf24;
+}
+
+#exam-start-button {
+  width: 100%;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 9px;
+  background: #fbbf24;
+  color: #422006;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+#exam-start-button:hover {
+  background: #fcd34d;
+}
+
+#exam-start-button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+@media (max-width: 640px) {
+  #exam-start-panel {
+    padding: 22px;
+  }
 }
