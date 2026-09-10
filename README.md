@@ -1,9 +1,5 @@
 # The Way
 
-![alt text](image.png)
-
-# The Way
-
 ![The Way route simulator](image.png)
 
 The Way is a Google Street View–based route and driving-test simulator. A route is defined as an ordered list of geographic events. Events can display route messages, issue examiner commands, collect answers, and apply penalties when required route points are missed.
