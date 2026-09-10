@@ -10,16 +10,6 @@
   },
   "events": [
     {
-      "id": "route-002-welcome",
-      "type": "route-message",
-      "lat": 35.8880832,
-      "lng": 14.5029997,
-      "radius": 20,
-      "message": "Demo Route 2 loaded. Select all five actions in the correct order.",
-      "autoCloseMs": 5000,
-      "priority": "normal"
-    },
-    {
       "id": "route-002-sequence-command",
       "type": "examiner-command",
       "lat": 35.8880832,
@@ -78,5 +68,16 @@
         "priority": "high"
       }
     }
-  ]
+  ],
+  "startNotice": {
+    "title": "Before the test",
+    "items": [
+      "Follow the examiner's instructions carefully.",
+      "Observe all road signs and speed limits.",
+      "Answer examiner commands before leaving the valid area.",
+      "Leaving the valid area without answering will result in a penalty.",
+      "This route requires five actions to be selected in the correct order."
+    ],
+    "buttonLabel": "Start Exam"
+  }
 }

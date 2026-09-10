@@ -240,3 +240,81 @@ button:focus-visible {
     grid-template-columns: 1fr;
   }
 }
+
+#exam-start-dialog {
+  width: min(560px, calc(100vw - 32px));
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+}
+
+#exam-start-dialog::backdrop {
+  background: rgba(5, 12, 24, 0.58);
+  backdrop-filter: blur(2px);
+}
+
+#exam-start-panel {
+  padding: 28px;
+  background: rgba(15, 23, 42, 0.97);
+  color: white;
+}
+
+#exam-start-eyebrow {
+  margin-bottom: 7px;
+  color: #fbbf24;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+#exam-start-title {
+  margin: 0 0 18px;
+  font-size: clamp(24px, 4vw, 34px);
+  line-height: 1.15;
+}
+
+#exam-start-items {
+  display: grid;
+  gap: 11px;
+  margin: 0 0 24px;
+  padding-left: 22px;
+  color: #e2e8f0;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+#exam-start-items li::marker {
+  color: #fbbf24;
+}
+
+#exam-start-button {
+  width: 100%;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 9px;
+  background: #fbbf24;
+  color: #422006;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+#exam-start-button:hover {
+  background: #fcd34d;
+}
+
+#exam-start-button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+@media (max-width: 640px) {
+  #exam-start-panel {
+    padding: 22px;
+  }
+}
