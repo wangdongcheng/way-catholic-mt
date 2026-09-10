@@ -61,7 +61,9 @@
         "priority": "high"
       },
       "headingMin": 340,
-      "headingMax": 60
+      "headingMax": 60,
+      "required": true,
+      "penaltyOnMiss": 5
     },
     {
       "id": "route-message-001",
@@ -73,7 +75,13 @@
       "autoCloseMs": 8000,
       "priority": "normal",
       "headingMin": 340,
-      "headingMax": 60
+      "headingMax": 60,
+      "required": true,
+      "penaltyOnMiss": 5
     }
-  ]
+  ],
+  "navigation": {
+    "eventsAreCheckpoints": true,
+    "defaultPenaltyOnMiss": 5
+  }
 }

@@ -39,6 +39,32 @@ function messageText(message) {
     : message?.message || "";
 }
 
+function routeNavigationFields(route) {
+  const navigation = route.navigation || {};
+
+  return `
+    <section class="form-section">
+      <h3>Route checkpoint defaults</h3>
+      <div class="form-grid">
+        <label class="correct-control">
+          <input type="checkbox" data-route-field="eventsAreCheckpoints"
+            ${navigation.eventsAreCheckpoints ? "checked" : ""} />
+          Events are checkpoints
+        </label>
+        ${inputField(
+          "Default missed-event penalty",
+          "route-default-penalty",
+          navigation.defaultPenaltyOnMiss ?? 0,
+          { type: "number", min: 0 }
+        ).replace(
+          'data-field="route-default-penalty"',
+          'data-route-field="defaultPenaltyOnMiss"'
+        )}
+      </div>
+    </section>
+  `;
+}
+
 function commonFields(event) {
   return `
     <section class="form-section">
@@ -57,6 +83,35 @@ function commonFields(event) {
       <button class="text-button" type="button" data-action="clear-heading">
         Remove heading restriction
       </button>
+    </section>
+  `;
+}
+
+function checkpointFields(event, route) {
+  const defaultRequired =
+    route.navigation?.eventsAreCheckpoints === true;
+  const required = typeof event.required === "boolean"
+    ? event.required
+    : defaultRequired;
+  const defaultPenalty =
+    route.navigation?.defaultPenaltyOnMiss ?? 0;
+
+  return `
+    <section class="form-section">
+      <h3>Route checkpoint</h3>
+      <div class="form-grid">
+        <label class="correct-control">
+          <input type="checkbox" data-field="required"
+            ${required ? "checked" : ""} />
+          Required event
+        </label>
+        ${inputField(
+          `Penalty on miss (route default: ${defaultPenalty})`,
+          "penaltyOnMiss",
+          event.penaltyOnMiss ?? defaultPenalty,
+          { type: "number", min: 0 }
+        )}
+      </div>
     </section>
   `;
 }
@@ -247,7 +302,9 @@ export function createEventForm({ container, title, store }) {
     }
 
     container.innerHTML = `
+      ${routeNavigationFields(state.route)}
       ${commonFields(event)}
+      ${checkpointFields(event, state.route)}
       ${event.type === "route-message"
         ? routeMessageFields(event)
         : commandFields(event)}
@@ -263,8 +320,22 @@ export function createEventForm({ container, title, store }) {
     if (!currentEventId) return;
 
     const target = domEvent.target;
+    const routeField = target.dataset.routeField;
     const field = target.dataset.field;
     const optionIndex = Number(target.dataset.optionIndex);
+
+    if (routeField) {
+      const route = store.getState().route;
+      const navigation = {
+        ...(route.navigation || {}),
+      };
+
+      navigation[routeField] = routeField === "eventsAreCheckpoints"
+        ? target.checked
+        : Number(target.value);
+      store.updateRoute({ navigation });
+      return;
+    }
     const optionField = target.dataset.optionField;
 
     if (field) {
@@ -272,9 +343,12 @@ export function createEventForm({ container, title, store }) {
         const numericFields = new Set([
           "lat", "lng", "radius", "headingMin", "headingMax",
           "autoCloseMs", "answerRadius", "penaltyOnOutOfRange", "penalty",
+          "penaltyOnMiss",
         ]);
 
-        if (field === "answerMode") {
+        if (field === "required") {
+          event.required = target.checked;
+        } else if (field === "answerMode") {
           normalizeAnswerMode(event, target.value);
         } else if (field === "outOfRangeMessage") {
           event.outOfRangeRouteMessage = {

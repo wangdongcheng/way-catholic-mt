@@ -247,11 +247,33 @@ async function initApp() {
   setLocationUpdatesEnabled(false);
   setStreetViewLocked(panorama, true);
 
+  const navigation = route.navigation || {};
   const eventEngine = createEventEngine({
     events: route.events || [],
+    navigation,
     streetViewService: streetView.streetViewService,
     panorama,
     onEvent: handleRouteEvent,
+    onMissedEvent: (event, { penalty, skippedByEventId }) => {
+      recordResult({
+        eventId: event.id,
+        status: "missed",
+        penalty,
+        skippedByEventId,
+        answeredAt: null,
+      });
+
+      const message = event.missedRouteMessage ||
+        navigation.missedRouteMessage || {
+          message: penalty > 0
+            ? `Route point missed. ${penalty} point deducted.`
+            : "Route point missed.",
+          autoCloseMs: 0,
+          priority: "high",
+        };
+
+      showRouteMessage(message);
+    },
   });
   let eventEngineInitialized = false;
 

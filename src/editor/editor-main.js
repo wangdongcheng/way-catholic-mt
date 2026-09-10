@@ -83,6 +83,13 @@ function commandOptions(mode) {
 
 function createEvent(type, position) {
   const route = store.getState().route;
+  const navigation = route.navigation || {};
+  const required = navigation.eventsAreCheckpoints === true;
+  const penaltyOnMiss = Number.isFinite(
+    navigation.defaultPenaltyOnMiss
+  )
+    ? navigation.defaultPenaltyOnMiss
+    : 0;
 
   if (type === "route-message") {
     store.addEvent({
@@ -91,6 +98,8 @@ function createEvent(type, position) {
       lat: Number(position.lat.toFixed(7)),
       lng: Number(position.lng.toFixed(7)),
       radius: 30,
+      required,
+      penaltyOnMiss,
       message: "New route message",
       autoCloseMs: 8000,
       priority: "normal",
@@ -106,6 +115,8 @@ function createEvent(type, position) {
     lat: Number(position.lat.toFixed(7)),
     lng: Number(position.lng.toFixed(7)),
     radius: 25,
+    required,
+    penaltyOnMiss,
     answerRadius: 60,
     command: "New examiner command",
     answerMode: type,

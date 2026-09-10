@@ -28,6 +28,40 @@ export function validateRoute(route) {
     issues.push(issue("error", "The route start position is invalid."));
   }
 
+  if (
+    route.navigation !== undefined &&
+    (
+      !route.navigation ||
+      typeof route.navigation !== "object" ||
+      Array.isArray(route.navigation)
+    )
+  ) {
+    issues.push(issue("error", "Route navigation settings must be an object."));
+  } else if (route.navigation) {
+    if (
+      route.navigation.eventsAreCheckpoints !== undefined &&
+      typeof route.navigation.eventsAreCheckpoints !== "boolean"
+    ) {
+      issues.push(issue(
+        "error",
+        "Events are checkpoints must be true or false."
+      ));
+    }
+
+    if (
+      route.navigation.defaultPenaltyOnMiss !== undefined &&
+      (
+        !Number.isFinite(route.navigation.defaultPenaltyOnMiss) ||
+        route.navigation.defaultPenaltyOnMiss < 0
+      )
+    ) {
+      issues.push(issue(
+        "error",
+        "Default missed-event penalty cannot be negative."
+      ));
+    }
+  }
+
   if (!Array.isArray(route.events)) {
     issues.push(issue("error", "The route must contain an events array."));
     return issues;
@@ -60,6 +94,31 @@ export function validateRoute(route) {
 
     if (!Number.isFinite(event.radius) || event.radius <= 0) {
       issues.push(issue("error", "Trigger radius must be greater than zero.", eventId));
+    }
+
+    if (
+      event.required !== undefined &&
+      typeof event.required !== "boolean"
+    ) {
+      issues.push(issue(
+        "error",
+        "Required must be true or false.",
+        eventId
+      ));
+    }
+
+    if (
+      event.penaltyOnMiss !== undefined &&
+      (
+        !Number.isFinite(event.penaltyOnMiss) ||
+        event.penaltyOnMiss < 0
+      )
+    ) {
+      issues.push(issue(
+        "error",
+        "Missed-event penalty cannot be negative.",
+        eventId
+      ));
     }
 
     const hasOneHeading =
