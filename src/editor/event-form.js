@@ -40,7 +40,7 @@ function messageText(message) {
 }
 
 function routeNavigationFields(route) {
-  const navigation = route.navigation || {};
+  const navigation = route.navigation;
 
   return `
     <section class="form-section">
@@ -88,13 +88,7 @@ function commonFields(event) {
 }
 
 function checkpointFields(event, route) {
-  const defaultRequired =
-    route.navigation?.eventsAreCheckpoints === true;
-  const required = typeof event.required === "boolean"
-    ? event.required
-    : defaultRequired;
-  const defaultPenalty =
-    route.navigation?.defaultPenaltyOnMiss ?? 0;
+  const defaultPenalty = route.navigation.defaultPenaltyOnMiss;
 
   return `
     <section class="form-section">
@@ -102,13 +96,13 @@ function checkpointFields(event, route) {
       <div class="form-grid">
         <label class="correct-control">
           <input type="checkbox" data-field="required"
-            ${required ? "checked" : ""} />
+            ${event.required ? "checked" : ""} />
           Required event
         </label>
         ${inputField(
           `Penalty on miss (route default: ${defaultPenalty})`,
           "penaltyOnMiss",
-          event.penaltyOnMiss ?? defaultPenalty,
+          event.penaltyOnMiss,
           { type: "number", min: 0 }
         )}
       </div>

@@ -1,3 +1,5 @@
+import { normalizeRouteConfig } from "./route-normalizer.js";
+
 export const APP_CONFIG = {
   defaultRoute: "route-001",
   routeBasePath: "/data/routes",
@@ -61,7 +63,7 @@ export async function loadRouteConfig() {
     );
   }
 
-  return response.json();
+  return normalizeRouteConfig(await response.json());
 }
 
 export function getInitialState(route) {

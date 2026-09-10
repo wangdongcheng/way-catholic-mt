@@ -83,13 +83,10 @@ function commandOptions(mode) {
 
 function createEvent(type, position) {
   const route = store.getState().route;
-  const navigation = route.navigation || {};
-  const required = navigation.eventsAreCheckpoints === true;
-  const penaltyOnMiss = Number.isFinite(
-    navigation.defaultPenaltyOnMiss
-  )
-    ? navigation.defaultPenaltyOnMiss
-    : 0;
+  const {
+    eventsAreCheckpoints: required,
+    defaultPenaltyOnMiss: penaltyOnMiss,
+  } = route.navigation;
 
   if (type === "route-message") {
     store.addEvent({

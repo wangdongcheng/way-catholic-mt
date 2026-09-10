@@ -247,10 +247,9 @@ async function initApp() {
   setLocationUpdatesEnabled(false);
   setStreetViewLocked(panorama, true);
 
-  const navigation = route.navigation || {};
+  const { navigation } = route;
   const eventEngine = createEventEngine({
     events: route.events || [],
-    navigation,
     streetViewService: streetView.streetViewService,
     panorama,
     onEvent: handleRouteEvent,

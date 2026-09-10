@@ -1,3 +1,5 @@
+import { normalizeRouteConfig } from "../route-normalizer.js";
+
 const clone = (value) => structuredClone(value);
 
 export function createRouteStore() {
@@ -15,7 +17,7 @@ export function createRouteStore() {
   }
 
   function setRoute(route, { dirty = false } = {}) {
-    const nextRoute = clone(route);
+    const nextRoute = normalizeRouteConfig(clone(route));
     state = {
       route: nextRoute,
       selectedEventId: nextRoute.events?.[0]?.id || null,
