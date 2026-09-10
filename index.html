@@ -10,13 +10,22 @@
 <body>
   <div id="street-view"></div>
 
-  <div id="current-info">
+  <div id="current-info" class="hidden">
     <div>Route: <span id="current-route">-</span></div>
     <div>Pos: <span id="current-pos">-</span></div>
     <div>Pano: <span id="current-pano">-</span></div>
     <div>Heading: <span id="camera-heading">-</span>°</div>
     <div>Location: <span id="current-location">-</span></div>
   </div>
+
+  <dialog id="exam-start-dialog" aria-labelledby="exam-start-title">
+    <div id="exam-start-panel">
+      <div id="exam-start-eyebrow">Driving Test</div>
+      <h1 id="exam-start-title">Before the test</h1>
+      <ul id="exam-start-items"></ul>
+      <button id="exam-start-button" type="button">Start Exam</button>
+    </div>
+  </dialog>
 
   <dialog id="route-message" aria-labelledby="route-message-text">
     <div id="route-message-panel">

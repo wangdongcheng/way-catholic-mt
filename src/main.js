@@ -4,18 +4,24 @@ import {
   getInitialState,
   loadRouteConfig,
 } from "./config.js";
+import { EXAM_START_NOTICE } from "./exam-config.js";
 import { createEventEngine } from "./event-engine.js";
 import {
   createStreetView,
   restartStreetView,
+  setStreetViewLocked,
 } from "./streetview.js";
 import {
   bindUiActions,
   clearRouteMessages,
   getExaminerSelection,
+  hideCurrentInfo,
   hideExaminerCommand,
+  hideExamStart,
   scheduleLocationUpdate,
+  setLocationUpdatesEnabled,
   showExaminerCommand,
+  showExamStart,
   showInfoTemporarily,
   showRouteMessage,
   updatePanoramaInfo,
@@ -29,6 +35,7 @@ let commandQueue = [];
 let results = [];
 let totalPenalty = 0;
 let panorama = null;
+let examStarted = false;
 
 function getEventPenalty(event, selectedIds, isCorrect) {
   if (isCorrect) {
@@ -236,6 +243,8 @@ async function initApp() {
   panorama = streetView.panorama;
   updateRouteName(route.name);
   updatePenaltyScore(0);
+  setLocationUpdatesEnabled(false);
+  setStreetViewLocked(panorama, true);
 
   const eventEngine = createEventEngine({
     events: route.events || [],
@@ -243,8 +252,44 @@ async function initApp() {
     panorama,
     onEvent: handleRouteEvent,
   });
+  let eventEngineInitialized = false;
+
+  const startExam = async () => {
+    if (examStarted) {
+      return;
+    }
+
+    examStarted = true;
+    setLocationUpdatesEnabled(true);
+    setStreetViewLocked(panorama, false);
+    hideExamStart();
+    updatePanoramaInfo(panorama);
+    scheduleLocationUpdate(panorama, streetView.geocoder);
+    showInfoTemporarily();
+
+    if (!eventEngineInitialized) {
+      eventEngineInitialized = true;
+      await eventEngine.initialize();
+    } else {
+      eventEngine.refreshAndCheck();
+    }
+  };
+
+  const prepareExam = () => {
+    examStarted = false;
+    setLocationUpdatesEnabled(false);
+    setStreetViewLocked(panorama, true);
+    hideCurrentInfo();
+    showExamStart(EXAM_START_NOTICE, {
+      onStart: startExam,
+    });
+  };
 
   panorama.addListener("position_changed", () => {
+    if (!examStarted) {
+      return;
+    }
+
     updatePanoramaInfo(panorama);
     scheduleLocationUpdate(panorama, streetView.geocoder);
     showInfoTemporarily();
@@ -253,12 +298,20 @@ async function initApp() {
   });
 
   panorama.addListener("pano_changed", () => {
+    if (!examStarted) {
+      return;
+    }
+
     updatePanoramaInfo(panorama);
     showInfoTemporarily();
     eventEngine.checkNearbyEvents();
   });
 
   panorama.addListener("pov_changed", () => {
+    if (!examStarted) {
+      return;
+    }
+
     updatePanoramaInfo(panorama);
     showInfoTemporarily();
     eventEngine.checkNearbyEvents();
@@ -266,6 +319,8 @@ async function initApp() {
 
   bindUiActions({
     onRestart: () => {
+      examStarted = false;
+      setLocationUpdatesEnabled(false);
       activeCommand = null;
       commandQueue = [];
       results = [];
@@ -275,14 +330,11 @@ async function initApp() {
       clearRouteMessages();
       updatePenaltyScore(0);
       restartStreetView(panorama, initialState);
-      showInfoTemporarily();
+      prepareExam();
     },
   });
 
-  updatePanoramaInfo(panorama);
-  scheduleLocationUpdate(panorama, streetView.geocoder);
-  showInfoTemporarily();
-  await eventEngine.initialize();
+  prepareExam();
 }
 
 initApp().catch((error) => {

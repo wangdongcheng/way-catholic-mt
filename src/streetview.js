@@ -43,3 +43,13 @@ export function restartStreetView(panorama, initialState) {
   });
   panorama.setZoom(initialState.zoom);
 }
+
+export function setStreetViewLocked(panorama, locked) {
+  panorama.setOptions({
+    clickToGo: !locked,
+    linksControl: !locked,
+    panControl: !locked,
+    scrollwheel: !locked,
+    zoomControl: !locked,
+  });
+}

@@ -9,6 +9,7 @@ let routeMessageTimer = null;
 let routeMessageActive = false;
 let routeMessageQueue = [];
 let examinerState = null;
+let locationUpdatesEnabled = true;
 
 export function showInfoTemporarily() {
   const info = document.getElementById("current-info");
@@ -23,6 +24,13 @@ export function showInfoTemporarily() {
   infoHideTimer = setTimeout(() => {
     info.classList.add("hidden");
   }, 10000);
+}
+
+export function hideCurrentInfo() {
+  const info = document.getElementById("current-info");
+
+  clearTimeout(infoHideTimer);
+  info?.classList.add("hidden");
 }
 
 export function updatePanoramaInfo(panorama) {
@@ -71,6 +79,10 @@ function getAddressComponent(result, type) {
 }
 
 async function updateLocationInfo(panorama, geocoder) {
+  if (!locationUpdatesEnabled) {
+    return;
+  }
+
   const position = panorama.getPosition();
   const locationElement = document.getElementById("current-location");
 
@@ -95,6 +107,10 @@ async function updateLocationInfo(panorama, geocoder) {
   try {
     const cached = await findLocationInCache(lookup);
 
+    if (!locationUpdatesEnabled) {
+      return;
+    }
+
     if (cached) {
       if (isCurrentPosition()) {
         locationElement.textContent = cached.label;
@@ -109,6 +125,10 @@ async function updateLocationInfo(panorama, geocoder) {
       },
     });
     const result = response.results?.[0];
+
+    if (!locationUpdatesEnabled) {
+      return;
+    }
 
     if (!result) {
       if (isCurrentPosition()) {
@@ -144,11 +164,85 @@ async function updateLocationInfo(panorama, geocoder) {
   }
 }
 
+export function setLocationUpdatesEnabled(enabled) {
+  locationUpdatesEnabled = enabled;
+
+  if (!enabled) {
+    clearTimeout(locationLookupTimer);
+  }
+}
+
 export function scheduleLocationUpdate(panorama, geocoder) {
   clearTimeout(locationLookupTimer);
+
+  if (!locationUpdatesEnabled) {
+    return;
+  }
+
   locationLookupTimer = setTimeout(() => {
     updateLocationInfo(panorama, geocoder);
   }, 300);
+}
+
+export function showExamStart(startNotice, { onStart }) {
+  const dialog = document.getElementById("exam-start-dialog");
+  const title = document.getElementById("exam-start-title");
+  const items = document.getElementById("exam-start-items");
+  const button = document.getElementById("exam-start-button");
+
+  if (
+    !(dialog instanceof HTMLDialogElement) ||
+    !title ||
+    !items ||
+    !button
+  ) {
+    return;
+  }
+
+  const notice = startNotice || {};
+  const noticeItems = Array.isArray(notice.items) && notice.items.length > 0
+    ? notice.items
+    : [
+        "Follow the examiner's instructions carefully.",
+        "Observe all road signs and speed limits.",
+        "Answer examiner commands before leaving the valid area.",
+      ];
+
+  title.textContent = notice.title || "Before the test";
+  items.replaceChildren();
+
+  for (const item of noticeItems) {
+    const listItem = document.createElement("li");
+    listItem.textContent = item;
+    items.appendChild(listItem);
+  }
+
+  button.textContent = notice.buttonLabel || "Start Exam";
+  button.disabled = false;
+  button.onclick = async () => {
+    button.disabled = true;
+
+    try {
+      await onStart();
+    } catch (error) {
+      console.error("Failed to start the exam:", error);
+      button.disabled = false;
+    }
+  };
+
+  if (!dialog.open) {
+    dialog.showModal();
+  }
+
+  button.focus();
+}
+
+export function hideExamStart() {
+  const dialog = document.getElementById("exam-start-dialog");
+
+  if (dialog instanceof HTMLDialogElement && dialog.open) {
+    dialog.close();
+  }
 }
 
 function normalizeRouteMessage(input) {
@@ -368,6 +462,11 @@ export function bindUiActions({ onRestart }) {
     ?.addEventListener("click", closeCurrentRouteMessage);
 
   document.getElementById("route-message")
+    ?.addEventListener("cancel", (event) => {
+      event.preventDefault();
+    });
+
+  document.getElementById("exam-start-dialog")
     ?.addEventListener("cancel", (event) => {
       event.preventDefault();
     });

@@ -10,16 +10,6 @@
   },
   "events": [
     {
-      "id": "route-002-welcome",
-      "type": "route-message",
-      "lat": 35.8880832,
-      "lng": 14.5029997,
-      "radius": 20,
-      "message": "Demo Route 2 loaded. Select all five actions in the correct order.",
-      "autoCloseMs": 5000,
-      "priority": "normal"
-    },
-    {
       "id": "route-002-sequence-command",
       "type": "examiner-command",
       "lat": 35.8880832,

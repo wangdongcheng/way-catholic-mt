@@ -10,58 +10,45 @@
   },
   "events": [
     {
-      "id": "route-001-welcome",
-      "type": "route-message",
-      "lat": 35.8880832,
-      "lng": 14.5029997,
-      "radius": 20,
-      "message": "Demo Route 1 loaded. This route demonstrates a single-choice examiner command.",
-      "autoCloseMs": 5000,
-      "priority": "normal"
-    },
-    {
-      "id": "route-001-command",
+      "id": "examiner-command-001",
       "type": "examiner-command",
-      "lat": 35.8880832,
-      "lng": 14.5029997,
-      "pano": "D0PUR3k2NOAC-WeWHmp43w",
+      "lat": 35.8883578,
+      "lng": 14.5031947,
       "radius": 20,
-      "answerRadius": 70,
-      "headingMin": 340,
-      "headingMax": 40,
-      "command": "At the next junction, which direction did the examiner ask you to take?",
+      "answerRadius": 50,
+      "command": "Turn right, please",
       "answerMode": "single",
       "optionLayout": "single-column",
       "options": [
         {
-          "id": "left",
-          "label": "Turn left",
+          "id": "option-1",
+          "label": "Option 1",
           "correct": true,
           "penalty": 0,
           "routeMessage": {
-            "message": "Correct. Check your mirrors before changing direction.",
+            "message": "Option 1",
             "autoCloseMs": 5000,
             "priority": "high"
           }
         },
         {
-          "id": "right",
-          "label": "Turn right",
+          "id": "option-2",
+          "label": "Option 2",
           "correct": false,
           "penalty": 1,
           "routeMessage": {
-            "message": "The examiner instructed you to turn left. 1 point deducted.",
+            "message": "Option 2",
             "autoCloseMs": 0,
             "priority": "high"
           }
         },
         {
-          "id": "straight",
-          "label": "Continue straight",
+          "id": "option-3",
+          "label": "Option 3",
           "correct": false,
           "penalty": 1,
           "routeMessage": {
-            "message": "The examiner instructed you to turn left. 1 point deducted.",
+            "message": "Option 3",
             "autoCloseMs": 0,
             "priority": "high"
           }
@@ -72,7 +59,21 @@
         "message": "You left the answering area without answering. 1 point deducted.",
         "autoCloseMs": 0,
         "priority": "high"
-      }
+      },
+      "headingMin": 340,
+      "headingMax": 60
+    },
+    {
+      "id": "route-message-001",
+      "type": "route-message",
+      "lat": 35.8889953,
+      "lng": 14.5032702,
+      "radius": 30,
+      "message": "Go Go Go",
+      "autoCloseMs": 8000,
+      "priority": "normal",
+      "headingMin": 340,
+      "headingMax": 60
     }
   ]
 }
