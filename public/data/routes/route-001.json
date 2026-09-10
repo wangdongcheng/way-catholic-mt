@@ -64,20 +64,6 @@
       "headingMax": 60,
       "required": true,
       "penaltyOnMiss": 5
-    },
-    {
-      "id": "route-message-001",
-      "type": "route-message",
-      "lat": 35.8889953,
-      "lng": 14.5032702,
-      "radius": 30,
-      "message": "Go Go Go",
-      "autoCloseMs": 8000,
-      "priority": "normal",
-      "headingMin": 340,
-      "headingMax": 60,
-      "required": true,
-      "penaltyOnMiss": 5
     }
   ],
   "navigation": {

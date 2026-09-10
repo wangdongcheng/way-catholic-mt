@@ -63,6 +63,10 @@ function uniqueEventId(route, prefix) {
   return id;
 }
 
+function isPracticeMessageDocument(route) {
+  return route?.type === "practice-messages";
+}
+
 function commandOptions(mode) {
   if (mode === "sequence") {
     return [
@@ -83,6 +87,15 @@ function commandOptions(mode) {
 
 function createEvent(type, position) {
   const route = store.getState().route;
+  const isPracticeMessages = isPracticeMessageDocument(route);
+
+  if (isPracticeMessages !== (type === "route-message")) {
+    showToast(isPracticeMessages
+      ? "Practice Messages only accepts route messages"
+      : "Route messages belong in Practice Messages");
+    return;
+  }
+
   const {
     eventsAreCheckpoints: required,
     defaultPenaltyOnMiss: penaltyOnMiss,
@@ -95,8 +108,6 @@ function createEvent(type, position) {
       lat: Number(position.lat.toFixed(7)),
       lng: Number(position.lng.toFixed(7)),
       radius: 30,
-      required,
-      penaltyOnMiss,
       message: "New route message",
       autoCloseMs: 8000,
       priority: "normal",
@@ -165,6 +176,14 @@ function hideAddMenu() {
 
 function showAddMenu({ clientX, clientY, position = null }) {
   menuPosition = position;
+  const documentType = isPracticeMessageDocument(store.getState().route)
+    ? "practice"
+    : "exam";
+
+  elements.addMenu.querySelectorAll("[data-document]")
+    .forEach((button) => {
+      button.hidden = button.dataset.document !== documentType;
+    });
   elements.addMenu.hidden = false;
   elements.addMenu.style.left = `${Math.min(clientX, window.innerWidth - 250)}px`;
   elements.addMenu.style.top = `${Math.min(clientY, window.innerHeight - 210)}px`;
@@ -197,14 +216,18 @@ async function loadRoute(routeId) {
   elements.status.textContent = `Loading ${routeId}…`;
 
   try {
-    const response = await fetch(`/data/routes/${routeId}.json`);
+    const path = routeId === "route-messages"
+      ? "/data/route-messages.json"
+      : `/data/routes/${routeId}.json`;
+    const response = await fetch(path);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const route = await response.json();
 
     store.setRoute(route);
     editorMap.focusRoute(route);
     elements.routeSelector.value = routeId;
-    elements.status.textContent = `${route.events.length} events loaded`;
+    const itemLabel = isPracticeMessageDocument(route) ? "messages" : "events";
+    elements.status.textContent = `${route.events.length} ${itemLabel} loaded`;
 
     const url = new URL(window.location.href);
     url.searchParams.set("route", routeId);
@@ -362,7 +385,7 @@ elements.validationResults.addEventListener("click", (event) => {
 const initialRoute = new URLSearchParams(window.location.search)
   .get("route") || "route-001";
 await loadRoute(
-  ["route-001", "route-002"].includes(initialRoute)
+  ["route-001", "route-002", "route-messages"].includes(initialRoute)
     ? initialRoute
     : "route-001"
 );

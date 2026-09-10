@@ -80,6 +80,66 @@ export function updatePenaltyScore(penalty) {
   }
 }
 
+export function showModeSelection(routes, {
+  selectedRouteId,
+  onPractice,
+  onExam,
+}) {
+  const dialog = document.getElementById("mode-dialog");
+  const choice = document.getElementById("mode-choice");
+  const routeChoice = document.getElementById("exam-route-choice");
+  const routeSelect = document.getElementById("exam-route-select");
+
+  if (!(dialog instanceof HTMLDialogElement) || !routeSelect) {
+    return;
+  }
+
+  routeSelect.replaceChildren();
+  const randomOption = document.createElement("option");
+  randomOption.value = "random";
+  randomOption.textContent = "Random route";
+  routeSelect.appendChild(randomOption);
+
+  for (const route of routes) {
+    const option = document.createElement("option");
+    option.value = route.id;
+    option.textContent = route.name;
+    option.selected = route.id === selectedRouteId;
+    routeSelect.appendChild(option);
+  }
+
+  choice.hidden = false;
+  routeChoice.hidden = true;
+  document.getElementById("practice-mode-button").onclick = onPractice;
+  document.getElementById("exam-mode-button").onclick = () => {
+    choice.hidden = true;
+    routeChoice.hidden = false;
+    routeSelect.focus();
+  };
+  document.getElementById("exam-route-back").onclick = () => {
+    routeChoice.hidden = true;
+    choice.hidden = false;
+    document.getElementById("exam-mode-button").focus();
+  };
+  document.getElementById("exam-route-continue").onclick = () => {
+    onExam(routeSelect.value);
+  };
+
+  if (!dialog.open) {
+    dialog.showModal();
+  }
+
+  document.getElementById("practice-mode-button").focus();
+}
+
+export function hideModeSelection() {
+  const dialog = document.getElementById("mode-dialog");
+
+  if (dialog instanceof HTMLDialogElement && dialog.open) {
+    dialog.close();
+  }
+}
+
 function getAddressComponent(result, type) {
   return result.address_components?.find((component) =>
     component.types.includes(type)
@@ -192,11 +252,12 @@ export function scheduleLocationUpdate(panorama, geocoder) {
   }, 300);
 }
 
-export function showExamStart(startNotice, { onStart }) {
+export function showExamStart(startNotice, { onStart, routeName }) {
   const dialog = document.getElementById("exam-start-dialog");
   const title = document.getElementById("exam-start-title");
   const items = document.getElementById("exam-start-items");
   const button = document.getElementById("exam-start-button");
+  const route = document.getElementById("exam-start-route");
 
   if (
     !(dialog instanceof HTMLDialogElement) ||
@@ -217,6 +278,9 @@ export function showExamStart(startNotice, { onStart }) {
       ];
 
   title.textContent = notice.title || "Before the test";
+  if (route) {
+    route.textContent = routeName ? `Route: ${routeName}` : "";
+  }
   items.replaceChildren();
 
   for (const item of noticeItems) {
@@ -475,6 +539,11 @@ export function bindUiActions({ onRestart }) {
     });
 
   document.getElementById("exam-start-dialog")
+    ?.addEventListener("cancel", (event) => {
+      event.preventDefault();
+    });
+
+  document.getElementById("mode-dialog")
     ?.addEventListener("cancel", (event) => {
       event.preventDefault();
     });

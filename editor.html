@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Edit route messages and examiner commands on a map." />
+  <meta name="description" content="Edit practice messages and exam routes on a map." />
   <title>Route Editor — The Way</title>
 </head>
 
@@ -17,10 +17,11 @@
       </div>
 
       <label class="toolbar-field">
-        <span>Route</span>
+        <span>Data set</span>
         <select id="route-selector">
           <option value="route-001">Demo Route 1</option>
           <option value="route-002">Demo Route 2</option>
+          <option value="route-messages">Practice Messages</option>
         </select>
       </label>
 
@@ -81,10 +82,10 @@
   </main>
 
   <div id="add-event-menu" class="context-menu" hidden>
-    <button type="button" data-create-type="route-message">Route message</button>
-    <button type="button" data-create-type="single">Single-choice command</button>
-    <button type="button" data-create-type="multiple">Multiple-choice command</button>
-    <button type="button" data-create-type="sequence">Sequence command</button>
+    <button type="button" data-create-type="route-message" data-document="practice">Route message</button>
+    <button type="button" data-create-type="single" data-document="exam">Single-choice command</button>
+    <button type="button" data-create-type="multiple" data-document="exam">Multiple-choice command</button>
+    <button type="button" data-create-type="sequence" data-document="exam">Sequence command</button>
   </div>
 
   <dialog id="validation-dialog">

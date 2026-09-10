@@ -1,7 +1,11 @@
 import "./style.css";
 
 import {
+  AVAILABLE_ROUTES,
   getInitialState,
+  getRequestedMode,
+  getRequestedRouteId,
+  loadPracticeMessages,
   loadRouteConfig,
   EXAM_START_NOTICE
 } from "./config.js";
@@ -19,11 +23,13 @@ import {
   hideCurrentInfo,
   hideExaminerCommand,
   hideExamStart,
+  hideModeSelection,
   scheduleLocationUpdate,
   setLocationUpdatesEnabled,
   showExaminerCommand,
   showExamStart,
   showInfoTemporarily,
+  showModeSelection,
   showRouteMessage,
   updatePanoramaInfo,
   updatePenaltyScore,
@@ -36,7 +42,7 @@ let commandQueue = [];
 let results = [];
 let totalPenalty = 0;
 let panorama = null;
-let examStarted = false;
+let driveStarted = false;
 
 function getEventPenalty(event, selectedIds, isCorrect) {
   if (isCorrect) {
@@ -237,12 +243,17 @@ function handleRouteEvent(event, targetPosition) {
 }
 
 async function initApp() {
-  const route = await loadRouteConfig();
+  const mode = getRequestedMode();
+  const requestedRouteId = getRequestedRouteId();
+  const route = mode === "practice"
+    ? await loadPracticeMessages()
+    : await loadRouteConfig(requestedRouteId);
   const initialState = getInitialState(route);
   const streetView = await createStreetView(initialState);
 
   panorama = streetView.panorama;
-  updateRouteName(route.name);
+  document.body.dataset.mode = mode || "selection";
+  updateRouteName(mode === "practice" ? "Practice" : route.name);
   updatePenaltyScore(0);
   setLocationUpdatesEnabled(false);
   setStreetViewLocked(panorama, true);
@@ -252,8 +263,14 @@ async function initApp() {
     events: route.events || [],
     streetViewService: streetView.streetViewService,
     panorama,
-    onEvent: handleRouteEvent,
+    onEvent: mode === "practice"
+      ? (event) => showRouteMessage(event)
+      : handleRouteEvent,
     onMissedEvent: (event, { penalty, skippedByEventId }) => {
+      if (mode !== "exam") {
+        return;
+      }
+
       recordResult({
         eventId: event.id,
         status: "missed",
@@ -276,14 +293,15 @@ async function initApp() {
   });
   let eventEngineInitialized = false;
 
-  const startExam = async () => {
-    if (examStarted) {
+  const startDrive = async () => {
+    if (driveStarted) {
       return;
     }
 
-    examStarted = true;
+    driveStarted = true;
     setLocationUpdatesEnabled(true);
     setStreetViewLocked(panorama, false);
+    hideModeSelection();
     hideExamStart();
     updatePanoramaInfo(panorama);
     scheduleLocationUpdate(panorama, streetView.geocoder);
@@ -297,18 +315,45 @@ async function initApp() {
     }
   };
 
+  const startExam = async () => {
+    await startDrive();
+  };
+
   const prepareExam = () => {
-    examStarted = false;
+    driveStarted = false;
     setLocationUpdatesEnabled(false);
     setStreetViewLocked(panorama, true);
     hideCurrentInfo();
     showExamStart(EXAM_START_NOTICE, {
       onStart: startExam,
+      routeName: route.name,
     });
   };
 
+  const navigateToMode = (nextMode, routeId = null) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("mode", nextMode);
+
+    if (nextMode === "exam" && routeId) {
+      url.searchParams.set("route", routeId);
+    } else {
+      url.searchParams.delete("route");
+    }
+
+    window.location.assign(url);
+  };
+
+  const selectExamRoute = (selection) => {
+    const routeId = selection === "random"
+      ? AVAILABLE_ROUTES[
+          Math.floor(Math.random() * AVAILABLE_ROUTES.length)
+        ].id
+      : selection;
+    navigateToMode("exam", routeId);
+  };
+
   panorama.addListener("position_changed", () => {
-    if (!examStarted) {
+    if (!driveStarted) {
       return;
     }
 
@@ -320,7 +365,7 @@ async function initApp() {
   });
 
   panorama.addListener("pano_changed", () => {
-    if (!examStarted) {
+    if (!driveStarted) {
       return;
     }
 
@@ -330,7 +375,7 @@ async function initApp() {
   });
 
   panorama.addListener("pov_changed", () => {
-    if (!examStarted) {
+    if (!driveStarted) {
       return;
     }
 
@@ -341,7 +386,7 @@ async function initApp() {
 
   bindUiActions({
     onRestart: () => {
-      examStarted = false;
+      driveStarted = false;
       setLocationUpdatesEnabled(false);
       activeCommand = null;
       commandQueue = [];
@@ -352,11 +397,26 @@ async function initApp() {
       clearRouteMessages();
       updatePenaltyScore(0);
       restartStreetView(panorama, initialState);
-      prepareExam();
+
+      if (mode === "exam") {
+        prepareExam();
+      } else if (mode === "practice") {
+        startDrive();
+      }
     },
   });
 
-  prepareExam();
+  if (mode === "exam") {
+    prepareExam();
+  } else if (mode === "practice") {
+    await startDrive();
+  } else {
+    showModeSelection(AVAILABLE_ROUTES, {
+      selectedRouteId: requestedRouteId,
+      onPractice: () => navigateToMode("practice"),
+      onExam: selectExamRoute,
+    });
+  }
 }
 
 initApp().catch((error) => {

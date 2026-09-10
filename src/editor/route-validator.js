@@ -67,6 +67,7 @@ export function validateRoute(route) {
     return issues;
   }
 
+  const isPracticeMessages = route.type === "practice-messages";
   const seenIds = new Set();
 
   for (const event of route.events) {
@@ -134,6 +135,13 @@ export function validateRoute(route) {
     }
 
     if (event.type === "route-message") {
+      if (!isPracticeMessages) {
+        issues.push(issue(
+          "error",
+          "Route messages belong in route-messages.json.",
+          eventId
+        ));
+      }
       if (!event.message?.trim()) {
         issues.push(issue("error", "Route message text is required.", eventId));
       }
@@ -143,6 +151,15 @@ export function validateRoute(route) {
     if (event.type !== "examiner-command") {
       issues.push(issue("error", `Unsupported event type: ${event.type}`, eventId));
       continue;
+    }
+
+
+    if (isPracticeMessages) {
+      issues.push(issue(
+        "error",
+        "Practice messages cannot contain examiner commands.",
+        eventId
+      ));
     }
 
     if (!event.command?.trim()) {

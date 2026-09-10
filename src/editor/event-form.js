@@ -295,10 +295,12 @@ export function createEventForm({ container, title, store }) {
       return;
     }
 
+    const isPracticeMessages = state.route.type === "practice-messages";
+
     container.innerHTML = `
-      ${routeNavigationFields(state.route)}
+      ${isPracticeMessages ? "" : routeNavigationFields(state.route)}
       ${commonFields(event)}
-      ${checkpointFields(event, state.route)}
+      ${isPracticeMessages ? "" : checkpointFields(event, state.route)}
       ${event.type === "route-message"
         ? routeMessageFields(event)
         : commandFields(event)}

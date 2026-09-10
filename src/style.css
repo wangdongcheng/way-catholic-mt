@@ -11,6 +11,137 @@ body {
   font-family: Arial, sans-serif;
 }
 
+#mode-dialog {
+  width: min(590px, calc(100vw - 32px));
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+}
+
+#mode-dialog::backdrop {
+  background: rgba(5, 12, 24, 0.62);
+  backdrop-filter: blur(2px);
+}
+
+#mode-panel {
+  padding: 28px;
+  background: rgba(15, 23, 42, 0.97);
+  color: white;
+}
+
+.start-eyebrow {
+  margin-bottom: 7px;
+  color: #fbbf24;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+#mode-panel h1 {
+  margin: 0 0 8px;
+  font-size: clamp(24px, 4vw, 34px);
+}
+
+.start-description {
+  margin: 0 0 22px;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+#mode-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.mode-button {
+  min-height: 132px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mode-button.primary {
+  border-color: rgba(251, 191, 36, 0.55);
+  background: rgba(251, 191, 36, 0.14);
+}
+
+.mode-button strong,
+.mode-button span {
+  display: block;
+}
+
+.mode-button strong {
+  margin-bottom: 8px;
+  font-size: 19px;
+}
+
+.mode-button span {
+  color: #cbd5e1;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+#exam-route-field {
+  display: grid;
+  gap: 8px;
+  color: #e2e8f0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+#exam-route-select {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 8px;
+  background: #1e293b;
+  color: white;
+  font: inherit;
+}
+
+.start-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.primary-button,
+.secondary-button {
+  padding: 11px 18px;
+  border: 0;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.primary-button {
+  background: #fbbf24;
+  color: #422006;
+}
+
+.secondary-button {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+body[data-mode="practice"] #penalty-status,
+body[data-mode="selection"] #penalty-status,
+body[data-mode="selection"] #restart-button {
+  display: none;
+}
+
 #current-info {
   position: fixed;
   top: 20px;
@@ -226,6 +357,14 @@ button:focus-visible {
 }
 
 @media (max-width: 640px) {
+  #mode-panel {
+    padding: 22px;
+  }
+
+  #mode-options {
+    grid-template-columns: 1fr;
+  }
+
   #examiner-command {
     top: auto;
     right: 10px;
@@ -275,6 +414,13 @@ button:focus-visible {
   margin: 0 0 18px;
   font-size: clamp(24px, 4vw, 34px);
   line-height: 1.15;
+}
+
+#exam-start-route {
+  margin: -8px 0 18px;
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 #exam-start-items {

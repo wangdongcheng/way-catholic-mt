@@ -2,7 +2,7 @@
 
 ![The Way route simulator](image.png)
 
-The Way is a Google Street View–based route and driving-test simulator. A route is defined as an ordered list of geographic events. Events can display route messages, issue examiner commands, collect answers, and apply penalties when required route points are missed.
+The Way is a Google Street View–based practice and driving-test simulator. Exam routes contain ordered examiner commands, answers, checkpoints, and penalties. Practice messages are maintained separately and appear only in Practice mode.
 
 ## Getting Started
 
@@ -43,8 +43,13 @@ http://localhost:5173/
 Example:
 
 ```text
-http://localhost:5173/?route=route-001
+http://localhost:5173/?mode=exam&route=route-001
 ```
+
+The start screen offers two modes:
+
+* **Practice** starts immediately without an examiner or route selection and loads `public/data/route-messages.json`.
+* **Exam** asks for a route or Random, then displays the existing test notice before starting.
 
 ### Route Editor
 
@@ -59,6 +64,17 @@ http://localhost:5173/editor.html?route=route-001
 ```
 
 ## URL Parameters
+
+### `mode`
+
+Selects the driving mode after the start screen:
+
+```text
+?mode=practice
+?mode=exam&route=route-001
+```
+
+Without `mode`, the application displays the Practice/Exam choice.
 
 ### `route`
 
@@ -227,7 +243,7 @@ URL: /?route=route-003
 | `name`       | string | Human-readable route name displayed by the application and Editor. |
 | `startState` | object | Initial Street View position and camera state.                     |
 | `navigation` | object | Route-level checkpoint and missed-event defaults.                  |
-| `events`     |  array | Ordered list of route messages and examiner commands.              |
+| `events`     |  array | Ordered list of examiner commands used in Exam mode.                |
 
 ## Start State
 
@@ -321,12 +337,12 @@ suppressed
 
 ## Common Event Properties
 
-Both `route-message` and `examiner-command` events support these properties:
+Examiner commands and practice messages share these location properties:
 
 ```json
 {
   "id": "event-001",
-  "type": "route-message",
+  "type": "examiner-command",
   "lat": 35.8889953,
   "lng": 14.5032702,
   "pano": null,
@@ -341,7 +357,7 @@ Both `route-message` and `examiner-command` events support these properties:
 | Property             |           Type | Description                                                          |
 | -------------------- | -------------: | -------------------------------------------------------------------- |
 | `id`                 |         string | Unique event ID within the route.                                    |
-| `type`               |         string | `route-message` or `examiner-command`.                               |
+| `type`               |         string | `examiner-command` in route files; `route-message` in the practice-message file. |
 | `lat`                |         number | Trigger-center latitude.                                             |
 | `lng`                |         number | Trigger-center longitude.                                            |
 | `pano`               |         string | Optional Street View panorama ID.                                    |
@@ -388,9 +404,9 @@ event.missedRouteMessage
 → built-in message
 ```
 
-## Route Message Events
+## Practice Route Messages
 
-A route message displays an important instruction or notification in the shared Route Message dialog.
+Practice messages are stored together in `public/data/route-messages.json`. They display only in Practice mode and are not part of any exam route or route-progress sequence.
 
 ```json
 {
@@ -399,8 +415,6 @@ A route message displays an important instruction or notification in the shared 
   "lat": 35.8889953,
   "lng": 14.5032702,
   "radius": 30,
-  "required": true,
-  "penaltyOnMiss": 5,
   "message": "Continue along this road.",
   "autoCloseMs": 8000,
   "priority": "normal"
@@ -600,14 +614,16 @@ In the Editor:
 
 1. Change the route name if required.
 2. Right-click the map or use **Add event**.
-3. Select Route Message, Single Choice, Multiple Choice, or Sequence.
+3. Select Single Choice, Multiple Choice, or Sequence.
 4. Click the map to place the event.
 5. Drag an existing marker to adjust its position.
 6. Configure its radius and optional heading range.
 7. Configure checkpoint requirements and missed-event penalties.
-8. Configure message or examiner-command details.
+8. Configure examiner-command details.
 9. Review Route Validation.
 10. Export the JSON.
+
+To maintain Practice messages, select **Practice Messages** in the Editor. Only Route Message events are available in that data set, and exports use the filename `route-messages.json`.
 
 The Editor currently exports a download. It does not directly overwrite the local repository file.
 

@@ -10,6 +10,38 @@
 <body>
   <div id="street-view"></div>
 
+  <dialog id="mode-dialog" aria-labelledby="mode-title">
+    <div id="mode-panel">
+      <div class="start-eyebrow">The Way</div>
+      <section id="mode-choice">
+        <h1 id="mode-title">Choose a mode</h1>
+        <p class="start-description">Practice freely or take a test on a selected route.</p>
+        <div id="mode-options">
+          <button id="practice-mode-button" class="mode-button" type="button">
+            <strong>Practice</strong>
+            <span>Drive freely and receive practice messages along the way.</span>
+          </button>
+          <button id="exam-mode-button" class="mode-button primary" type="button">
+            <strong>Exam</strong>
+            <span>Choose a route, then follow the examiner's instructions.</span>
+          </button>
+        </div>
+      </section>
+      <section id="exam-route-choice" hidden>
+        <h1>Choose an exam route</h1>
+        <p class="start-description">Select a route or let The Way choose one at random.</p>
+        <label id="exam-route-field">
+          <span>Route</span>
+          <select id="exam-route-select"></select>
+        </label>
+        <div class="start-actions">
+          <button id="exam-route-back" class="secondary-button" type="button">Back</button>
+          <button id="exam-route-continue" class="primary-button" type="button">Continue</button>
+        </div>
+      </section>
+    </div>
+  </dialog>
+
   <div id="current-info" class="hidden">
     <div>Route: <span id="current-route">-</span></div>
     <div>Pos: <span id="current-pos">-</span></div>
@@ -22,6 +54,7 @@
     <div id="exam-start-panel">
       <div id="exam-start-eyebrow">Driving Test</div>
       <h1 id="exam-start-title">Before the test</h1>
+      <div id="exam-start-route"></div>
       <ul id="exam-start-items"></ul>
       <button id="exam-start-button" type="button">Start Exam</button>
     </div>

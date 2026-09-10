@@ -1,0 +1,26 @@
+{
+  "id": "route-messages",
+  "type": "practice-messages",
+  "name": "Practice Messages",
+  "startState": {
+    "lat": 35.8880832,
+    "lng": 14.5029997,
+    "heading": 24,
+    "pitch": 0,
+    "zoom": 1
+  },
+  "events": [
+    {
+      "id": "route-message-001",
+      "type": "route-message",
+      "lat": 35.8889953,
+      "lng": 14.5032702,
+      "radius": 30,
+      "message": "Go Go Go",
+      "autoCloseMs": 8000,
+      "priority": "normal",
+      "headingMin": 340,
+      "headingMax": 60
+    }
+  ]
+}

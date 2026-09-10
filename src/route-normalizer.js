@@ -28,15 +28,18 @@ export function normalizeRouteConfig(route) {
   }
 
   const navigation = resolveRouteNavigation(route);
+  const applyCheckpointDefaults = route.type !== "practice-messages";
   const events = Array.isArray(route.events)
     ? route.events.map((event) => ({
         ...event,
-        required: event.required !== undefined
-          ? event.required
-          : navigation.eventsAreCheckpoints,
-        penaltyOnMiss: event.penaltyOnMiss !== undefined
-          ? event.penaltyOnMiss
-          : navigation.defaultPenaltyOnMiss,
+        ...(applyCheckpointDefaults ? {
+          required: event.required !== undefined
+            ? event.required
+            : navigation.eventsAreCheckpoints,
+          penaltyOnMiss: event.penaltyOnMiss !== undefined
+            ? event.penaltyOnMiss
+            : navigation.defaultPenaltyOnMiss,
+        } : {}),
       }))
     : route.events;
 

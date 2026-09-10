@@ -3,7 +3,13 @@ import { normalizeRouteConfig } from "./route-normalizer.js";
 export const APP_CONFIG = {
   defaultRoute: "route-001",
   routeBasePath: "/data/routes",
+  practiceMessagesPath: "/data/route-messages.json",
 };
+
+export const AVAILABLE_ROUTES = Object.freeze([
+  { id: "route-001", name: "Demo Route 1" },
+  { id: "route-002", name: "Demo Route 2" },
+]);
 
 export const EXAM_START_NOTICE = Object.freeze({
   title: "Before the test",
@@ -51,8 +57,12 @@ export function getRequestedRouteId() {
     : APP_CONFIG.defaultRoute;
 }
 
-export async function loadRouteConfig() {
-  const routeId = getRequestedRouteId();
+export function getRequestedMode() {
+  const mode = new URLSearchParams(window.location.search).get("mode");
+  return mode === "practice" || mode === "exam" ? mode : null;
+}
+
+export async function loadRouteConfig(routeId = getRequestedRouteId()) {
   const response = await fetch(
     `${APP_CONFIG.routeBasePath}/${routeId}.json`
   );
@@ -61,6 +71,16 @@ export async function loadRouteConfig() {
     throw new Error(
       `Failed to load route ${routeId}: ${response.status}`
     );
+  }
+
+  return normalizeRouteConfig(await response.json());
+}
+
+export async function loadPracticeMessages() {
+  const response = await fetch(APP_CONFIG.practiceMessagesPath);
+
+  if (!response.ok) {
+    throw new Error(`Failed to load practice messages: ${response.status}`);
   }
 
   return normalizeRouteConfig(await response.json());
