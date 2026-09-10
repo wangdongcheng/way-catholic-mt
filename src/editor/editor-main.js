@@ -5,6 +5,9 @@ import { createEventForm } from "./event-form.js";
 import { downloadRouteJson, readRouteJson } from "./route-exporter.js";
 import { createRouteStore } from "./route-store.js";
 import { groupIssuesByEvent, validateRoute } from "./route-validator.js";
+import { initializeGeocodingCacheExport } from "./geocoding-cache-export.js";
+
+await initializeGeocodingCacheExport();
 
 const escapeHtml = (value) => String(value ?? "")
   .replaceAll("&", "&amp;")
