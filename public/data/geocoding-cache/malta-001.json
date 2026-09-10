@@ -301,6 +301,76 @@
       "lng": 14.503164595913228,
       "label": "Floriana",
       "cachedAt": "2026-09-10T16:07:29.283Z"
+    },
+    {
+      "panoId": "lr99Lptp5Cl2WDyPENzO_w",
+      "lat": 35.88942287222527,
+      "lng": 14.503629566816608,
+      "label": "Triq Emvin Cremona, Il-Furjana",
+      "cachedAt": "2026-09-10T20:09:23.927Z"
+    },
+    {
+      "panoId": "F36fEwh7_7di7no9t5Vx6g",
+      "lat": 35.89000317086517,
+      "lng": 14.50390746582878,
+      "label": "Triq Emvin Cremona, Il-Furjana",
+      "cachedAt": "2026-09-10T20:30:42.005Z"
+    },
+    {
+      "panoId": "dE1DhyvFw470i53KAi1DoQ",
+      "lat": 35.89050165056216,
+      "lng": 14.504144306936519,
+      "label": "Floriana",
+      "cachedAt": "2026-09-10T20:32:27.195Z"
+    },
+    {
+      "panoId": "5qKoXI9SDaX7d4q3eIjtKQ",
+      "lat": 35.89067566126178,
+      "lng": 14.504222069108218,
+      "label": "Floriana",
+      "cachedAt": "2026-09-10T20:32:30.152Z"
+    },
+    {
+      "panoId": "WXHKa8q8zz5XSGjidS7uig",
+      "lat": 35.891088992557215,
+      "lng": 14.50444495793444,
+      "label": "Triq Sarria, Il-Furjana",
+      "cachedAt": "2026-09-10T20:32:36.112Z"
+    },
+    {
+      "panoId": "l5926Ga-kdAKZN5d4NUL7A",
+      "lat": 35.89111930683939,
+      "lng": 14.504548048572637,
+      "label": "Saint Anne Street, Floriana",
+      "cachedAt": "2026-09-10T20:32:36.560Z"
+    },
+    {
+      "panoId": "rB1i1ePU26kCp_VVn1w4yw",
+      "lat": 35.89117764136442,
+      "lng": 14.504641718921125,
+      "label": "Saint Anne Street, Floriana",
+      "cachedAt": "2026-09-10T20:32:37.489Z"
+    },
+    {
+      "panoId": "I7cruhMlpHvxcurkTk0U3g",
+      "lat": 35.89123410642889,
+      "lng": 14.504731390116227,
+      "label": "Triq Sant' Anna, Il-Furjana",
+      "cachedAt": "2026-09-10T20:32:41.361Z"
+    },
+    {
+      "panoId": "Vpyb4IV90hotVYIpnlJfTA",
+      "lat": 35.891292669946765,
+      "lng": 14.504823194279576,
+      "label": "Triq Sant' Anna, Il-Furjana",
+      "cachedAt": "2026-09-10T20:32:42.024Z"
+    },
+    {
+      "panoId": "G_ebSVpMT80TRNhYlOCsog",
+      "lat": 35.8913833426677,
+      "lng": 14.504960411837077,
+      "label": "Saint Anne Street, Floriana",
+      "cachedAt": "2026-09-10T20:32:43.611Z"
     }
   ]
 }
