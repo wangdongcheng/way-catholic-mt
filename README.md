@@ -2,7 +2,7 @@
 
 ![alt text](image.png)
 
-Route data is stored in `public/data/routes`.
+Route data is stored in `public/data/routes`. 
 
 - Demo route 1: `?route=route-001`
 - Demo route 2: `?route=route-002`
