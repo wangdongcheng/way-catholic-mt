@@ -1,4 +1,12 @@
 {
   "version": 1,
-  "entries": []
+  "entries": [
+    {
+      "panoId": "",
+      "lat": 35.8880832,
+      "lng": 14.5029997,
+      "label": "Floriana",
+      "cachedAt": "2026-09-10T06:55:30.186Z"
+    }
+  ]
 }
