@@ -75,16 +75,5 @@
       "headingMin": 340,
       "headingMax": 60
     }
-  ],
-  "startNotice": {
-    "title": "Before the test",
-    "items": [
-      "Follow the examiner's instructions carefully.",
-      "Observe all road signs and speed limits.",
-      "Answer examiner commands before leaving the valid area.",
-      "Leaving the valid area without answering will result in a penalty.",
-      "This route uses a single-choice examiner command."
-    ],
-    "buttonLabel": "Start Exam"
-  }
+  ]
 }

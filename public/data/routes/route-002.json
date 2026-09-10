@@ -68,16 +68,5 @@
         "priority": "high"
       }
     }
-  ],
-  "startNotice": {
-    "title": "Before the test",
-    "items": [
-      "Follow the examiner's instructions carefully.",
-      "Observe all road signs and speed limits.",
-      "Answer examiner commands before leaving the valid area.",
-      "Leaving the valid area without answering will result in a penalty.",
-      "This route requires five actions to be selected in the correct order."
-    ],
-    "buttonLabel": "Start Exam"
-  }
+  ]
 }

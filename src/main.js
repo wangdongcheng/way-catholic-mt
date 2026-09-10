@@ -4,6 +4,7 @@ import {
   getInitialState,
   loadRouteConfig,
 } from "./config.js";
+import { EXAM_START_NOTICE } from "./exam-config.js";
 import { createEventEngine } from "./event-engine.js";
 import {
   createStreetView,
@@ -279,7 +280,7 @@ async function initApp() {
     setLocationUpdatesEnabled(false);
     setStreetViewLocked(panorama, true);
     hideCurrentInfo();
-    showExamStart(route.startNotice, {
+    showExamStart(EXAM_START_NOTICE, {
       onStart: startExam,
     });
   };
