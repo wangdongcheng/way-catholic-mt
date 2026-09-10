@@ -34,6 +34,7 @@ export function createObservationEngine({
   onAcknowledged = () => {},
   onMissed = () => {},
   onIncorrect = () => {},
+  onActiveChange = () => {},
 }) {
   const defaults = document?.defaults || {};
   const events = applyDefaults(document).filter((event) =>
@@ -44,6 +45,25 @@ export function createObservationEngine({
   const positions = new Map();
   const states = new Map();
   let maxRadius = 0;
+  let lastActiveCount = null;
+
+  function notifyActiveChange() {
+    const activeEventIds = events
+      .filter((event) =>
+        states.get(event.id) === OBSERVATION_STATUS.ACTIVE
+      )
+      .map((event) => event.id);
+
+    if (activeEventIds.length === lastActiveCount) {
+      return;
+    }
+
+    lastActiveCount = activeEventIds.length;
+    onActiveChange({
+      hasActive: activeEventIds.length > 0,
+      activeEventIds,
+    });
+  }
 
   function reset() {
     states.clear();
@@ -51,6 +71,8 @@ export function createObservationEngine({
     for (const event of events) {
       states.set(event.id, OBSERVATION_STATUS.PENDING);
     }
+
+    notifyActiveChange();
   }
 
   function cachePosition(event, position) {
@@ -165,6 +187,8 @@ export function createObservationEngine({
         states.set(event.id, OBSERVATION_STATUS.ACTIVE);
       }
     }
+
+    notifyActiveChange();
   }
 
   function acknowledge(observationType) {
@@ -199,6 +223,8 @@ export function createObservationEngine({
       states.set(event.id, OBSERVATION_STATUS.ACKNOWLEDGED);
       onAcknowledged(event);
     }
+
+    notifyActiveChange();
 
     return matched.map((event) => event.id);
   }

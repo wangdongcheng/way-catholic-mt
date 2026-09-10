@@ -569,7 +569,17 @@ export function showObservationToolbar(types, { onSelect }) {
 
 export function hideObservationToolbar() {
   const toolbar = document.getElementById("observation-toolbar");
-  if (toolbar) toolbar.hidden = true;
+  if (toolbar) {
+    toolbar.hidden = true;
+    toolbar.classList.remove("has-active-observation");
+  }
+}
+
+export function setObservationAttention(hasActive) {
+  document.getElementById("observation-toolbar")?.classList.toggle(
+    "has-active-observation",
+    Boolean(hasActive)
+  );
 }
 
 export function showExamFailure(failure, { onRestart }) {

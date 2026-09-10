@@ -39,6 +39,7 @@ import {
   showModeSelection,
   showObservationToolbar,
   showRouteMessage,
+  setObservationAttention,
   updatePanoramaInfo,
   updatePenaltyScore,
   updateRouteName,
@@ -340,6 +341,9 @@ async function initApp() {
         penalty,
         answeredAt: Date.now(),
       });
+    },
+    onActiveChange: ({ hasActive }) => {
+      setObservationAttention(hasActive);
     },
   });
   const criticalViolationEngine = createCriticalViolationEngine({
