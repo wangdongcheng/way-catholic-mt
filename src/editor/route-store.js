@@ -17,7 +17,10 @@ export function createRouteStore() {
   }
 
   function setRoute(route, { dirty = false } = {}) {
-    const nextRoute = normalizeRouteConfig(clone(route));
+    const nextRoute = route?.type === "observation-checks" ||
+      route?.type === "critical-violations"
+      ? clone(route)
+      : normalizeRouteConfig(clone(route));
     state = {
       route: nextRoute,
       selectedEventId: nextRoute.events?.[0]?.id || null,

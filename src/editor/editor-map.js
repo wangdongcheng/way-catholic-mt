@@ -11,6 +11,8 @@ const COLORS = {
   message: "#2563eb",
   command: "#f97316",
   answer: "#eab308",
+  criticalTrigger: "#f97316",
+  criticalDestination: "#dc2626",
   invalid: "#dc2626",
   heading: "#7c3aed",
 };
@@ -86,6 +88,7 @@ export async function createEditorMap({
     Map: GoogleMap,
     Circle,
     Polygon,
+    Polyline,
   } = await importLibrary("maps");
   const { AdvancedMarkerElement } = await importLibrary("marker");
 
@@ -147,17 +150,87 @@ export async function createEditorMap({
     clearOverlays();
 
     for (const event of route?.events || []) {
+      const invalid = issuesByEvent.has(event.id);
+      const selected = event.id === selectedEventId;
+
+      if (event.type === "critical-violation") {
+        const trigger = event.triggerCheckpoint?.location;
+        const forbidden = event.forbiddenDestination?.location;
+
+        if (
+          !Number.isFinite(trigger?.lat) ||
+          !Number.isFinite(trigger?.lng) ||
+          !Number.isFinite(forbidden?.lat) ||
+          !Number.isFinite(forbidden?.lng)
+        ) {
+          continue;
+        }
+
+        const addCriticalPoint = (position, point, title, color, radius) => {
+          const marker = new AdvancedMarkerElement({
+            map,
+            position,
+            title: `${event.id} · ${title}`,
+            gmpDraggable: true,
+            zIndex: selected ? 20 : 10,
+          });
+          marker.addListener("click", () => onSelect(event.id));
+          marker.addListener("dragend", () => {
+            const nextPosition = toLiteral(marker.position);
+            if (nextPosition) onPositionChange(event.id, nextPosition, point);
+          });
+          overlays.push(marker);
+
+          const circle = new Circle({
+            map,
+            center: position,
+            radius: Number(radius) || 0,
+            clickable: false,
+            strokeColor: invalid ? COLORS.invalid : color,
+            strokeOpacity: selected ? 1 : 0.7,
+            strokeWeight: selected ? 3 : 2,
+            fillColor: color,
+            fillOpacity: selected ? 0.18 : 0.08,
+          });
+          overlays.push(circle);
+        };
+
+        addCriticalPoint(
+          trigger,
+          "triggerCheckpoint",
+          "Trigger checkpoint",
+          COLORS.criticalTrigger,
+          event.triggerCheckpoint.radius
+        );
+        addCriticalPoint(
+          forbidden,
+          "forbiddenDestination",
+          "Forbidden destination",
+          COLORS.criticalDestination,
+          event.forbiddenDestination.radius
+        );
+
+        const connection = new Polyline({
+          map,
+          path: [trigger, forbidden],
+          clickable: false,
+          strokeColor: COLORS.criticalDestination,
+          strokeOpacity: selected ? 0.95 : 0.5,
+          strokeWeight: selected ? 4 : 2,
+        });
+        overlays.push(connection);
+        continue;
+      }
+
       if (!Number.isFinite(event.lat) || !Number.isFinite(event.lng)) {
         continue;
       }
 
       const center = { lat: event.lat, lng: event.lng };
-      const invalid = issuesByEvent.has(event.id);
       const baseColor = event.type === "examiner-command"
         ? COLORS.command
         : COLORS.message;
       const color = invalid ? COLORS.invalid : baseColor;
-      const selected = event.id === selectedEventId;
 
       const marker = new AdvancedMarkerElement({
         map,
@@ -189,7 +262,8 @@ export async function createEditorMap({
       overlays.push(triggerCircle);
 
       if (
-        event.type === "examiner-command" &&
+        (event.type === "examiner-command" ||
+          (event.type === "observation-check" && event.examEnabled !== false)) &&
         Number.isFinite(event.answerRadius)
       ) {
         const answerCircle = new Circle({
@@ -231,6 +305,17 @@ export async function createEditorMap({
 
     if (Number.isFinite(start?.lat) && Number.isFinite(start?.lng)) {
       map.setCenter({ lat: start.lat, lng: start.lng });
+      map.setZoom(16);
+      return;
+    }
+
+    const first = route?.events?.[0];
+    const position = first?.type === "critical-violation"
+      ? first.triggerCheckpoint?.location
+      : first && { lat: first.lat, lng: first.lng };
+
+    if (Number.isFinite(position?.lat) && Number.isFinite(position?.lng)) {
+      map.setCenter(position);
       map.setZoom(16);
     }
   }

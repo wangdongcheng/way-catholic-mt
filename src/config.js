@@ -3,7 +3,9 @@ import { normalizeRouteConfig } from "./route-normalizer.js";
 export const APP_CONFIG = {
   defaultRoute: "route-001",
   routeBasePath: "/data/routes",
-  practiceMessagesPath: "/data/route-messages.json",
+  observationChecksPath: "/data/observation-checks.json",
+  observationTypesPath: "/data/observation-types.json",
+  criticalViolationsPath: "/data/critical-violations.json",
 };
 
 export const AVAILABLE_ROUTES = Object.freeze([
@@ -16,6 +18,7 @@ export const EXAM_START_NOTICE = Object.freeze({
   items: [
     "Follow the examiner's instructions carefully.",
     "Observe all road signs and speed limits.",
+    "Confirm relevant road observations using the on-screen buttons.",
     "Answer examiner commands before leaving the valid area.",
     "Leaving the valid area without answering will result in a penalty.",
   ],
@@ -76,14 +79,26 @@ export async function loadRouteConfig(routeId = getRequestedRouteId()) {
   return normalizeRouteConfig(await response.json());
 }
 
-export async function loadPracticeMessages() {
-  const response = await fetch(APP_CONFIG.practiceMessagesPath);
+async function loadJson(path, label) {
+  const response = await fetch(path);
 
   if (!response.ok) {
-    throw new Error(`Failed to load practice messages: ${response.status}`);
+    throw new Error(`Failed to load ${label}: ${response.status}`);
   }
 
-  return normalizeRouteConfig(await response.json());
+  return response.json();
+}
+
+export function loadObservationChecks() {
+  return loadJson(APP_CONFIG.observationChecksPath, "observation checks");
+}
+
+export function loadObservationTypes() {
+  return loadJson(APP_CONFIG.observationTypesPath, "observation types");
+}
+
+export function loadCriticalViolations() {
+  return loadJson(APP_CONFIG.criticalViolationsPath, "critical violations");
 }
 
 export function getInitialState(route) {

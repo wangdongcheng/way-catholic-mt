@@ -41,6 +41,7 @@ let editorMap = null;
 let menuPosition = null;
 let latestIssues = [];
 let toastTimer = null;
+let pendingCriticalTrigger = null;
 
 function showToast(message) {
   clearTimeout(toastTimer);
@@ -63,8 +64,10 @@ function uniqueEventId(route, prefix) {
   return id;
 }
 
-function isPracticeMessageDocument(route) {
-  return route?.type === "practice-messages";
+function getDocumentKind(document) {
+  if (document?.type === "observation-checks") return "observation";
+  if (document?.type === "critical-violations") return "critical";
+  return "exam";
 }
 
 function commandOptions(mode) {
@@ -87,12 +90,87 @@ function commandOptions(mode) {
 
 function createEvent(type, position) {
   const route = store.getState().route;
-  const isPracticeMessages = isPracticeMessageDocument(route);
+  const documentKind = getDocumentKind(route);
 
-  if (isPracticeMessages !== (type === "route-message")) {
-    showToast(isPracticeMessages
-      ? "Practice Messages only accepts route messages"
-      : "Route messages belong in Practice Messages");
+  if (type === "critical-destination") {
+    if (!pendingCriticalTrigger) return;
+    const defaults = route.defaults || {};
+    store.addEvent({
+      id: uniqueEventId(route, "critical-violation"),
+      type: "critical-violation",
+      rule: "wrong-way-entry",
+      enabled: true,
+      oncePerSession: true,
+      triggerCheckpoint: {
+        location: pendingCriticalTrigger,
+        radius: defaults.triggerRadius ?? 15,
+        pano: null,
+      },
+      forbiddenDestination: {
+        location: {
+          lat: Number(position.lat.toFixed(7)),
+          lng: Number(position.lng.toFixed(7)),
+        },
+        radius: defaults.violationRadius ?? 15,
+        pano: null,
+      },
+      windowMs: defaults.windowMs ?? 60000,
+      practiceWarning: {
+        title: "Serious driving error",
+        message: "A critical driving violation was detected.",
+        buttonLabel: "I understand",
+        autoCloseMs: 0,
+      },
+      examFailure: {
+        title: "Test failed",
+        message: "A critical driving violation was detected.",
+        reasonCode: "CRITICAL_VIOLATION",
+      },
+    });
+    pendingCriticalTrigger = null;
+    showToast("Critical violation added");
+    return;
+  }
+
+  if (type === "critical-violation" && documentKind === "critical") {
+    pendingCriticalTrigger = {
+      lat: Number(position.lat.toFixed(7)),
+      lng: Number(position.lng.toFixed(7)),
+    };
+    editorMap.setPlacementMode("critical-destination");
+    elements.placementNotice.textContent =
+      "Step 2 of 2 · Click the forbidden destination · Esc to cancel";
+    elements.placementNotice.hidden = false;
+    return;
+  }
+
+  if (type === "observation-check" && documentKind === "observation") {
+    const defaults = route.defaults || {};
+    store.addEvent({
+      id: uniqueEventId(route, "observation"),
+      type: "observation-check",
+      enabled: true,
+      examEnabled: defaults.examEnabled !== false,
+      observationType: "road-awareness",
+      lat: Number(position.lat.toFixed(7)),
+      lng: Number(position.lng.toFixed(7)),
+      radius: defaults.radius ?? 25,
+      answerRadius: defaults.answerRadius ?? 45,
+      pano: null,
+      penaltyOnMiss: defaults.penaltyOnMiss ?? 3,
+      penaltyOnIncorrect: defaults.penaltyOnIncorrect ?? 1,
+      practiceMessage: {
+        message: "New practice observation message",
+        autoCloseMs: 8000,
+        priority: "normal",
+      },
+    });
+    showToast("Observation check added");
+    return;
+  }
+
+  if (documentKind !== "exam" || !["single", "multiple", "sequence"].includes(type)) {
+    showToast("This event type belongs in a different data set");
     return;
   }
 
@@ -100,21 +178,6 @@ function createEvent(type, position) {
     eventsAreCheckpoints: required,
     defaultPenaltyOnMiss: penaltyOnMiss,
   } = route.navigation;
-
-  if (type === "route-message") {
-    store.addEvent({
-      id: uniqueEventId(route, "route-message"),
-      type: "route-message",
-      lat: Number(position.lat.toFixed(7)),
-      lng: Number(position.lng.toFixed(7)),
-      radius: 30,
-      message: "New route message",
-      autoCloseMs: 8000,
-      priority: "normal",
-    });
-    showToast("Route message added");
-    return;
-  }
 
   const options = commandOptions(type);
   const event = {
@@ -176,9 +239,7 @@ function hideAddMenu() {
 
 function showAddMenu({ clientX, clientY, position = null }) {
   menuPosition = position;
-  const documentType = isPracticeMessageDocument(store.getState().route)
-    ? "practice"
-    : "exam";
+  const documentType = getDocumentKind(store.getState().route);
 
   elements.addMenu.querySelectorAll("[data-document]")
     .forEach((button) => {
@@ -216,9 +277,11 @@ async function loadRoute(routeId) {
   elements.status.textContent = `Loading ${routeId}…`;
 
   try {
-    const path = routeId === "route-messages"
-      ? "/data/route-messages.json"
-      : `/data/routes/${routeId}.json`;
+    const path = routeId === "observation-checks"
+      ? "/data/observation-checks.json"
+      : routeId === "critical-violations"
+        ? "/data/critical-violations.json"
+        : `/data/routes/${routeId}.json`;
     const response = await fetch(path);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const route = await response.json();
@@ -226,8 +289,7 @@ async function loadRoute(routeId) {
     store.setRoute(route);
     editorMap.focusRoute(route);
     elements.routeSelector.value = routeId;
-    const itemLabel = isPracticeMessageDocument(route) ? "messages" : "events";
-    elements.status.textContent = `${route.events.length} ${itemLabel} loaded`;
+    elements.status.textContent = `${route.events.length} events loaded`;
 
     const url = new URL(window.location.href);
     url.searchParams.set("route", routeId);
@@ -259,11 +321,19 @@ editorMap = await createEditorMap({
     createEvent(type, position);
   },
   onSelect: (eventId) => store.selectEvent(eventId),
-  onPositionChange: (eventId, position) => {
-    store.updateEvent(eventId, {
+  onPositionChange: (eventId, position, point = "event") => {
+    const nextPosition = {
       lat: Number(position.lat.toFixed(7)),
       lng: Number(position.lng.toFixed(7)),
-    });
+    };
+
+    if (point === "event") {
+      store.updateEvent(eventId, nextPosition);
+    } else {
+      store.mutateEvent(eventId, (event) => {
+        event[point].location = nextPosition;
+      });
+    }
   },
 });
 
@@ -307,6 +377,9 @@ elements.addMenu.addEventListener("click", (event) => {
     createEvent(type, position);
   } else {
     editorMap.setPlacementMode(type);
+    elements.placementNotice.textContent = type === "critical-violation"
+      ? "Step 1 of 2 · Click the trigger checkpoint · Esc to cancel"
+      : "Click the map to place the event · Esc to cancel";
     elements.placementNotice.hidden = false;
   }
 });
@@ -321,6 +394,7 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     hideAddMenu();
     editorMap.cancelPlacement();
+    pendingCriticalTrigger = null;
     elements.placementNotice.hidden = true;
   }
 });
@@ -385,7 +459,12 @@ elements.validationResults.addEventListener("click", (event) => {
 const initialRoute = new URLSearchParams(window.location.search)
   .get("route") || "route-001";
 await loadRoute(
-  ["route-001", "route-002", "route-messages"].includes(initialRoute)
+  [
+    "route-001",
+    "route-002",
+    "observation-checks",
+    "critical-violations",
+  ].includes(initialRoute)
     ? initialRoute
     : "route-001"
 );

@@ -48,8 +48,8 @@ http://localhost:5173/?mode=exam&route=route-001
 
 The start screen offers two modes:
 
-* **Practice** starts immediately without an examiner or route selection and loads `public/data/route-messages.json`.
-* **Exam** asks for a route or Random, then displays the existing test notice before starting.
+* **Practice** starts immediately without an examiner or route selection. Every enabled observation becomes an automatic teaching message, and critical violations show a red warning.
+* **Exam** asks for a route or Random, then displays the test notice. Observation buttons remain available while driving, and a critical violation ends the test.
 
 ### Route Editor
 
@@ -337,7 +337,7 @@ suppressed
 
 ## Common Event Properties
 
-Examiner commands and practice messages share these location properties:
+Examiner commands and observation checks share these location properties:
 
 ```json
 {
@@ -357,7 +357,7 @@ Examiner commands and practice messages share these location properties:
 | Property             |           Type | Description                                                          |
 | -------------------- | -------------: | -------------------------------------------------------------------- |
 | `id`                 |         string | Unique event ID within the route.                                    |
-| `type`               |         string | `examiner-command` in route files; `route-message` in the practice-message file. |
+| `type`               |         string | `examiner-command` in route files or `observation-check` in the observation file. |
 | `lat`                |         number | Trigger-center latitude.                                             |
 | `lng`                |         number | Trigger-center longitude.                                            |
 | `pano`               |         string | Optional Street View panorama ID.                                    |
@@ -404,28 +404,68 @@ event.missedRouteMessage
 → built-in message
 ```
 
-## Practice Route Messages
+## Observation Checks
 
-Practice messages are stored together in `public/data/route-messages.json`. They display only in Practice mode and are not part of any exam route or route-progress sequence.
+Global observations are stored in `public/data/observation-checks.json`. They do not belong to a route. Practice mode displays every enabled observation as a teaching message. Exam mode silently activates observations with `examEnabled` set to `true` and requires the matching toolbar button before the answer range is left.
 
 ```json
 {
-  "id": "route-message-001",
-  "type": "route-message",
+  "id": "observation-stop-line-001",
+  "type": "observation-check",
+  "enabled": true,
+  "examEnabled": true,
+  "observationType": "stop-line",
   "lat": 35.8889953,
   "lng": 14.5032702,
   "radius": 30,
-  "message": "Continue along this road.",
-  "autoCloseMs": 8000,
-  "priority": "normal"
+  "answerRadius": 50,
+  "penaltyOnMiss": 3,
+  "penaltyOnIncorrect": 1,
+  "practiceMessage": {
+    "message": "Stop line ahead. Prepare to stop before the line.",
+    "autoCloseMs": 8000,
+    "priority": "normal"
+  }
 }
 ```
 
-| Property      |   Type | Description                                                                          |
-| ------------- | -----: | ------------------------------------------------------------------------------------ |
-| `message`     | string | Text displayed in the Route Message dialog.                                          |
-| `autoCloseMs` | number | Automatic close delay in milliseconds. Use `0` to require the OK button.             |
-| `priority`    | string | `normal` or `high`. High-priority messages are placed before queued normal messages. |
+Set `examEnabled` to `false` for a teaching point that should appear in Practice but be ignored in Exam. Observation button definitions are stored in `public/data/observation-types.json`.
+
+## Critical Violations
+
+Global critical violations are stored in `public/data/critical-violations.json`. A violation is armed when the driver reaches checkpoint A. Reaching forbidden destination B before `windowMs` expires triggers a red Practice warning or immediately fails an Exam.
+
+```json
+{
+  "id": "critical-wrong-way-001",
+  "type": "critical-violation",
+  "rule": "wrong-way-entry",
+  "enabled": true,
+  "oncePerSession": true,
+  "triggerCheckpoint": {
+    "location": { "lat": 35.892456, "lng": 14.501678 },
+    "radius": 15,
+    "pano": null
+  },
+  "forbiddenDestination": {
+    "location": { "lat": 35.89221, "lng": 14.50165 },
+    "radius": 15,
+    "pano": null
+  },
+  "windowMs": 60000,
+  "practiceWarning": {
+    "title": "Serious driving error",
+    "message": "You entered a one-way street in the prohibited direction.",
+    "buttonLabel": "I understand",
+    "autoCloseMs": 0
+  },
+  "examFailure": {
+    "title": "Test failed",
+    "message": "You entered a one-way street in the prohibited direction.",
+    "reasonCode": "WRONG_WAY_ENTRY"
+  }
+}
+```
 
 ## Examiner Command Events
 
@@ -623,7 +663,9 @@ In the Editor:
 9. Review Route Validation.
 10. Export the JSON.
 
-To maintain Practice messages, select **Practice Messages** in the Editor. Only Route Message events are available in that data set, and exports use the filename `route-messages.json`.
+To maintain roadside teaching and exam observations, select **Observation Checks**. Exports use the filename `observation-checks.json`.
+
+To maintain two-point serious-error detection, select **Critical Violations**. Place checkpoint A first and forbidden destination B second. Exports use the filename `critical-violations.json`.
 
 The Editor currently exports a download. It does not directly overwrite the local repository file.
 

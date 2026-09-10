@@ -1,0 +1,12 @@
+{
+  "id": "critical-violations",
+  "type": "critical-violations",
+  "name": "Critical Violations",
+  "defaults": {
+    "triggerRadius": 15,
+    "violationRadius": 15,
+    "windowMs": 60000,
+    "oncePerSession": true
+  },
+  "events": []
+}

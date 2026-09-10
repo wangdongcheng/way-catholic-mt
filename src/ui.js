@@ -321,6 +321,8 @@ function normalizeRouteMessage(input) {
   if (typeof input === "string") {
     return {
       message: input,
+      title: "",
+      buttonLabel: "OK",
       autoCloseMs: 0,
       priority: "normal",
     };
@@ -328,6 +330,8 @@ function normalizeRouteMessage(input) {
 
   return {
     message: input?.message || "",
+    title: input?.title || "",
+    buttonLabel: input?.buttonLabel || "OK",
     autoCloseMs: Number.isFinite(input?.autoCloseMs)
       ? input.autoCloseMs
       : 0,
@@ -342,6 +346,8 @@ function displayNextRouteMessage() {
 
   const dialog = document.getElementById("route-message");
   const textElement = document.getElementById("route-message-text");
+  const titleElement = document.getElementById("route-message-title");
+  const button = document.getElementById("route-message-ok");
 
   if (!(dialog instanceof HTMLDialogElement) || !textElement) {
     return;
@@ -350,6 +356,12 @@ function displayNextRouteMessage() {
   const next = routeMessageQueue.shift();
   routeMessageActive = true;
   textElement.textContent = next.message;
+  if (titleElement) {
+    titleElement.textContent = next.title;
+    titleElement.hidden = !next.title;
+  }
+  if (button) button.textContent = next.buttonLabel;
+  dialog.dataset.priority = next.priority;
   dialog.showModal();
   document.getElementById("route-message-ok")?.focus();
 
@@ -526,6 +538,67 @@ export function getExaminerSelection() {
     : [];
 }
 
+export function showObservationToolbar(types, { onSelect }) {
+  const toolbar = document.getElementById("observation-toolbar");
+  const buttons = document.getElementById("observation-buttons");
+
+  if (!toolbar || !buttons) {
+    return;
+  }
+
+  buttons.replaceChildren();
+
+  for (const type of types || []) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "observation-button";
+    button.dataset.observationType = type.id;
+    button.textContent = type.label;
+    button.addEventListener("click", () => {
+      button.classList.remove("recorded");
+      void button.offsetWidth;
+      button.classList.add("recorded");
+      setTimeout(() => button.classList.remove("recorded"), 650);
+      onSelect(type.id);
+    });
+    buttons.appendChild(button);
+  }
+
+  toolbar.hidden = false;
+}
+
+export function hideObservationToolbar() {
+  const toolbar = document.getElementById("observation-toolbar");
+  if (toolbar) toolbar.hidden = true;
+}
+
+export function showExamFailure(failure, { onRestart }) {
+  const dialog = document.getElementById("exam-failure-dialog");
+  const title = document.getElementById("exam-failure-title");
+  const message = document.getElementById("exam-failure-message");
+  const reason = document.getElementById("exam-failure-reason");
+  const restart = document.getElementById("exam-failure-restart");
+
+  if (!(dialog instanceof HTMLDialogElement)) {
+    return;
+  }
+
+  title.textContent = failure?.title || "Test failed";
+  message.textContent = failure?.message || "A critical driving violation was detected.";
+  reason.textContent = failure?.reasonCode
+    ? `Reason: ${failure.reasonCode}`
+    : "";
+  restart.onclick = onRestart;
+
+  if (!dialog.open) dialog.showModal();
+  restart.focus();
+}
+
+export function hideExamFailure() {
+  const dialog = document.getElementById("exam-failure-dialog");
+  if (dialog instanceof HTMLDialogElement && dialog.open) dialog.close();
+}
+
 export function bindUiActions({ onRestart }) {
   document.getElementById("restart-button")
     ?.addEventListener("click", onRestart);
@@ -544,6 +617,11 @@ export function bindUiActions({ onRestart }) {
     });
 
   document.getElementById("mode-dialog")
+    ?.addEventListener("cancel", (event) => {
+      event.preventDefault();
+    });
+
+  document.getElementById("exam-failure-dialog")
     ?.addEventListener("cancel", (event) => {
       event.preventDefault();
     });

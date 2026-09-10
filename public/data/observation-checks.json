@@ -1,0 +1,56 @@
+{
+  "id": "observation-checks",
+  "type": "observation-checks",
+  "name": "Observation Checks",
+  "startState": {
+    "lat": 35.8880832,
+    "lng": 14.5029997,
+    "heading": 24,
+    "pitch": 0,
+    "zoom": 1
+  },
+  "defaults": {
+    "radius": 25,
+    "answerRadius": 45,
+    "examEnabled": true,
+    "penaltyOnMiss": 3,
+    "penaltyOnIncorrect": 1
+  },
+  "events": [
+    {
+      "id": "observation-road-awareness-001",
+      "type": "observation-check",
+      "enabled": true,
+      "examEnabled": true,
+      "observationType": "road-awareness",
+      "lat": 35.8889953,
+      "lng": 14.5032702,
+      "radius": 30,
+      "answerRadius": 50,
+      "pano": null,
+      "penaltyOnMiss": 3,
+      "penaltyOnIncorrect": 1,
+      "practiceMessage": {
+        "message": "Check the road ahead and identify the important road features.",
+        "autoCloseMs": 8000,
+        "priority": "normal"
+      }
+    },
+    {
+      "id": "observation-road-narrowing-001",
+      "type": "observation-check",
+      "enabled": true,
+      "examEnabled": false,
+      "observationType": "road-narrowing",
+      "lat": 35.889248,
+      "lng": 14.503115,
+      "radius": 30,
+      "pano": null,
+      "practiceMessage": {
+        "message": "The road narrows ahead. Reduce speed and be prepared to give way.",
+        "autoCloseMs": 8000,
+        "priority": "normal"
+      }
+    }
+  ]
+}

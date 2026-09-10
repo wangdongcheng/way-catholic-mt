@@ -247,6 +247,10 @@ h1 {
   background: #f97316;
 }
 
+.legend-dot.critical {
+  background: #dc2626;
+}
+
 .legend-ring.answer {
   border: 2px solid #facc15;
   border-radius: 50%;
@@ -388,6 +392,13 @@ h1 {
   color: #2563eb;
   font-size: 0.78rem;
   font-weight: 750;
+}
+
+.form-help {
+  margin: 10px 0 0;
+  color: #64748b;
+  font-size: 0.76rem;
+  line-height: 1.45;
 }
 
 .options-list {

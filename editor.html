@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Edit practice messages and exam routes on a map." />
+  <meta name="description" content="Edit exam routes, observations, and critical violations on a map." />
   <title>Route Editor — The Way</title>
 </head>
 
@@ -21,7 +21,8 @@
         <select id="route-selector">
           <option value="route-001">Demo Route 1</option>
           <option value="route-002">Demo Route 2</option>
-          <option value="route-messages">Practice Messages</option>
+          <option value="observation-checks">Observation Checks</option>
+          <option value="critical-violations">Critical Violations</option>
         </select>
       </label>
 
@@ -45,8 +46,9 @@
         <div id="editor-map" aria-label="Route event map"></div>
 
         <div class="map-legend" aria-label="Map legend">
-          <span><i class="legend-dot message"></i>Route message</span>
+          <span><i class="legend-dot message"></i>Observation</span>
           <span><i class="legend-dot command"></i>Examiner command</span>
+          <span><i class="legend-dot critical"></i>Critical violation</span>
           <span><i class="legend-ring answer"></i>Answer range</span>
           <span><i class="legend-wedge"></i>Heading</span>
         </div>
@@ -82,7 +84,8 @@
   </main>
 
   <div id="add-event-menu" class="context-menu" hidden>
-    <button type="button" data-create-type="route-message" data-document="practice">Route message</button>
+    <button type="button" data-create-type="observation-check" data-document="observation">Observation check</button>
+    <button type="button" data-create-type="critical-violation" data-document="critical">Critical violation</button>
     <button type="button" data-create-type="single" data-document="exam">Single-choice command</button>
     <button type="button" data-create-type="multiple" data-document="exam">Multiple-choice command</button>
     <button type="button" data-create-type="sequence" data-document="exam">Sequence command</button>
