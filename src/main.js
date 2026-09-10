@@ -3,8 +3,9 @@ import "./style.css";
 import {
   getInitialState,
   loadRouteConfig,
+  EXAM_START_NOTICE
 } from "./config.js";
-import { EXAM_START_NOTICE } from "./exam-config.js";
+
 import { createEventEngine } from "./event-engine.js";
 import {
   createStreetView,

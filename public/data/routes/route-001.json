@@ -1,6 +1,6 @@
 {
   "id": "route-001",
-  "name": "Demo Route 1 — Single Choice",
+  "name": "Route 1 — Single Choice",
   "startState": {
     "lat": 35.8880832,
     "lng": 14.5029997,
