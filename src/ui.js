@@ -3,6 +3,9 @@ import {
   saveLocationToCache,
 } from "./location-cache.js";
 
+const currentInfoEnabled =
+  new URLSearchParams(window.location.search).get("currentinfo") === "1";
+
 let infoHideTimer = null;
 let locationLookupTimer = null;
 let routeMessageTimer = null;
@@ -13,6 +16,11 @@ let locationUpdatesEnabled = true;
 
 export function showInfoTemporarily() {
   const info = document.getElementById("current-info");
+
+  if (!currentInfoEnabled) {
+    hideCurrentInfo();
+    return;
+  }
 
   if (!info) {
     return;
@@ -175,7 +183,7 @@ export function setLocationUpdatesEnabled(enabled) {
 export function scheduleLocationUpdate(panorama, geocoder) {
   clearTimeout(locationLookupTimer);
 
-  if (!locationUpdatesEnabled) {
+  if (!locationUpdatesEnabled || !currentInfoEnabled) {
     return;
   }
 
