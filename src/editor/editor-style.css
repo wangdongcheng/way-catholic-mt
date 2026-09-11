@@ -586,6 +586,36 @@ h1 {
   background: rgba(15, 23, 42, 0.5);
 }
 
+#new-route-dialog {
+  width: min(440px, calc(100vw - 32px));
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.3);
+}
+
+#new-route-dialog::backdrop {
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.new-route-fields {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+.new-route-fields .form-help {
+  margin-top: 0;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 18px;
+  border-top: 1px solid #e2e8f0;
+}
+
 .dialog-header {
   display: flex;
   align-items: center;

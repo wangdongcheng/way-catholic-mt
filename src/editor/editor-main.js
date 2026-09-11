@@ -6,6 +6,7 @@ import { downloadRouteJson, readRouteJson } from "./route-exporter.js";
 import { createRouteStore } from "./route-store.js";
 import { groupIssuesByEvent, validateRoute } from "./route-validator.js";
 import { initializeGeocodingCacheExport } from "./geocoding-cache-export.js";
+import { DEFAULT_ROUTE_NAVIGATION } from "../route-normalizer.js";
 
 await initializeGeocodingCacheExport();
 
@@ -19,6 +20,13 @@ const store = createRouteStore();
 const elements = {
   routeSelector: document.getElementById("route-selector"),
   routeName: document.getElementById("route-name"),
+  newRouteButton: document.getElementById("new-route-button"),
+  newRouteDialog: document.getElementById("new-route-dialog"),
+  newRouteForm: document.getElementById("new-route-form"),
+  newRouteId: document.getElementById("new-route-id"),
+  newRouteName: document.getElementById("new-route-name"),
+  newRouteClose: document.getElementById("new-route-close"),
+  newRouteCancel: document.getElementById("new-route-cancel"),
   addButton: document.getElementById("add-event-button"),
   addMenu: document.getElementById("add-event-menu"),
   importButton: document.getElementById("import-button"),
@@ -42,6 +50,7 @@ let menuPosition = null;
 let latestIssues = [];
 let toastTimer = null;
 let pendingCriticalTrigger = null;
+let activeDataSet = null;
 
 function showToast(message) {
   clearTimeout(toastTimer);
@@ -62,6 +71,60 @@ function uniqueEventId(route, prefix) {
   }
 
   return id;
+}
+
+function nextRouteId() {
+  const routeNumbers = [...elements.routeSelector.options]
+    .map((option) => /^route-(\d+)$/.exec(option.value)?.[1])
+    .filter(Boolean)
+    .map(Number);
+  const nextNumber = Math.max(0, ...routeNumbers) + 1;
+  return `route-${String(nextNumber).padStart(3, "0")}`;
+}
+
+function confirmDiscardChanges() {
+  return !store.getState().dirty || window.confirm(
+    "Discard the unsaved changes to the current data set?"
+  );
+}
+
+function setDraftOption(route) {
+  elements.routeSelector.querySelector("[data-draft-route]")?.remove();
+
+  const option = document.createElement("option");
+  option.value = `draft:${route.id}`;
+  option.dataset.draftRoute = "true";
+  option.textContent = `Draft: ${route.name}`;
+  elements.routeSelector.append(option);
+  elements.routeSelector.value = option.value;
+  activeDataSet = option.value;
+}
+
+function createNewRoute(routeId, routeName) {
+  const currentStart = store.getState().route?.startState;
+  const route = {
+    id: routeId,
+    name: routeName,
+    startState: {
+      lat: currentStart?.lat ?? 35.8880832,
+      lng: currentStart?.lng ?? 14.5029997,
+      heading: currentStart?.heading ?? 0,
+      pitch: currentStart?.pitch ?? 0,
+      zoom: currentStart?.zoom ?? 1,
+    },
+    events: [],
+    navigation: { ...DEFAULT_ROUTE_NAVIGATION },
+  };
+
+  store.setRoute(route, { dirty: true });
+  editorMap.focusRoute(route);
+  setDraftOption(route);
+  elements.status.textContent = "New route ready for editing";
+
+  const url = new URL(window.location.href);
+  url.searchParams.delete("route");
+  window.history.replaceState({}, "", url);
+  showToast("New route created. Add events, then export the JSON file.");
 }
 
 function getDocumentKind(document) {
@@ -288,7 +351,9 @@ async function loadRoute(routeId) {
 
     store.setRoute(route);
     editorMap.focusRoute(route);
+    elements.routeSelector.querySelector("[data-draft-route]")?.remove();
     elements.routeSelector.value = routeId;
+    activeDataSet = routeId;
     elements.status.textContent = `${route.events.length} events loaded`;
 
     const url = new URL(window.location.href);
@@ -296,6 +361,7 @@ async function loadRoute(routeId) {
     window.history.replaceState({}, "", url);
   } catch (error) {
     console.error("Failed to load route:", error);
+    if (activeDataSet) elements.routeSelector.value = activeDataSet;
     elements.status.textContent = `Could not load ${routeId}`;
     showToast("Route could not be loaded");
   }
@@ -350,6 +416,10 @@ store.subscribe((state) => {
   renderValidation(latestIssues);
 
   elements.routeName.value = state.route?.name || "";
+  const draftOption = elements.routeSelector.querySelector("[data-draft-route]");
+  if (draftOption && elements.routeSelector.value === draftOption.value) {
+    draftOption.textContent = `Draft: ${state.route?.name || state.route?.id || "New route"}`;
+  }
   elements.dirty.textContent = state.dirty
     ? "Unsaved changes"
     : "Loaded source";
@@ -399,8 +469,42 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-elements.routeSelector.addEventListener("change", () => {
-  loadRoute(elements.routeSelector.value);
+elements.routeSelector.addEventListener("change", async () => {
+  const routeId = elements.routeSelector.value;
+  if (!confirmDiscardChanges()) {
+    elements.routeSelector.value = activeDataSet;
+    return;
+  }
+
+  await loadRoute(routeId);
+});
+
+elements.newRouteButton.addEventListener("click", () => {
+  const routeId = nextRouteId();
+  elements.newRouteId.value = routeId;
+  elements.newRouteName.value = `Route ${Number(routeId.split("-")[1])}`;
+  elements.newRouteDialog.showModal();
+  elements.newRouteId.select();
+});
+
+elements.newRouteForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const routeId = elements.newRouteId.value.trim();
+  const routeName = elements.newRouteName.value.trim();
+
+  if (!routeId || !routeName || !elements.newRouteForm.reportValidity()) return;
+  if (!confirmDiscardChanges()) return;
+
+  elements.newRouteDialog.close();
+  createNewRoute(routeId, routeName);
+});
+
+elements.newRouteClose.addEventListener("click", () => {
+  elements.newRouteDialog.close();
+});
+
+elements.newRouteCancel.addEventListener("click", () => {
+  elements.newRouteDialog.close();
 });
 
 elements.routeName.addEventListener("change", () => {
