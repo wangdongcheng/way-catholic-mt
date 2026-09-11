@@ -489,7 +489,7 @@ export function showExaminerFeedback(input, status) {
     correct: "Correct",
     incorrect: "Incorrect",
     missed: "Missed",
-    "not-enough": "Not enough",
+    "not-that-one": "Not that one",
     "out-of-range": "No answer recorded",
   };
   const item = document.createElement("article");

@@ -384,8 +384,8 @@ async function initApp() {
         answeredAt: Date.now(),
       });
       showExaminerFeedback(
-        "That observation was not enough.",
-        "not-enough"
+        "That observation did not match.",
+        "not-that-one"
       );
     },
     onVisibilityChange: ({ hasVisible }) => {

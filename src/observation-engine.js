@@ -48,6 +48,7 @@ export function createObservationEngine({
   const states = new Map();
   let maxRadius = 0;
   let lastVisibleCount = null;
+  let remainingAttempts = 0;
 
   function notifyDebugStateChange(position = panorama.getPosition()) {
     const debugEvents = events.flatMap((event) => {
@@ -70,12 +71,12 @@ export function createObservationEngine({
   }
 
   function notifyVisibilityChange() {
-    const visibleEventIds = events
+    const activeEventIds = events
       .filter((event) =>
-        states.get(event.id) === OBSERVATION_STATUS.ACTIVE ||
-        states.get(event.id) === OBSERVATION_STATUS.ACKNOWLEDGED
+        states.get(event.id) === OBSERVATION_STATUS.ACTIVE
       )
       .map((event) => event.id);
+    const visibleEventIds = remainingAttempts > 0 ? activeEventIds : [];
 
     if (visibleEventIds.length === lastVisibleCount) {
       return;
@@ -90,6 +91,7 @@ export function createObservationEngine({
 
   function reset() {
     states.clear();
+    remainingAttempts = 0;
 
     for (const event of events) {
       states.set(event.id, OBSERVATION_STATUS.PENDING);
@@ -182,6 +184,11 @@ export function createObservationEngine({
         }
       }
     }
+
+    const activeCount = events.filter((event) =>
+      states.get(event.id) === OBSERVATION_STATUS.ACTIVE
+    ).length;
+    remainingAttempts = Math.min(remainingAttempts, activeCount);
   }
 
   function checkNearbyEvents() {
@@ -218,6 +225,7 @@ export function createObservationEngine({
         onPracticeMessage(event.practiceMessage, event);
       } else {
         states.set(event.id, OBSERVATION_STATUS.ACTIVE);
+        remainingAttempts += 1;
       }
     }
 
@@ -230,20 +238,20 @@ export function createObservationEngine({
       return [];
     }
 
-    const matched = events.filter((event) =>
-      states.get(event.id) === OBSERVATION_STATUS.ACTIVE &&
+    const active = events.filter((event) =>
+      states.get(event.id) === OBSERVATION_STATUS.ACTIVE
+    );
+
+    if (active.length === 0 || remainingAttempts === 0) {
+      return [];
+    }
+
+    remainingAttempts -= 1;
+    const matched = active.find((event) =>
       event.observationType === observationType
     );
 
-    if (matched.length === 0) {
-      const active = events.filter((event) =>
-        states.get(event.id) === OBSERVATION_STATUS.ACTIVE
-      );
-
-      if (active.length === 0) {
-        return [];
-      }
-
+    if (!matched) {
       const penalty = Math.max(...active.map((event) =>
         Number(event.penaltyOnIncorrect) ||
         Number(defaults.penaltyOnIncorrect) || 0
@@ -254,18 +262,18 @@ export function createObservationEngine({
         activeEventIds: active.map((event) => event.id),
         penalty,
       });
+      notifyVisibilityChange();
+      notifyDebugStateChange();
       return [];
     }
 
-    for (const event of matched) {
-      states.set(event.id, OBSERVATION_STATUS.ACKNOWLEDGED);
-      onAcknowledged(event);
-    }
+    states.set(matched.id, OBSERVATION_STATUS.ACKNOWLEDGED);
+    onAcknowledged(matched);
 
     notifyVisibilityChange();
     notifyDebugStateChange();
 
-    return matched.map((event) => event.id);
+    return [matched.id];
   }
 
   async function initialize() {
