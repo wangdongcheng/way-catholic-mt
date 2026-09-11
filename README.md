@@ -1,8 +1,8 @@
-# The Way
+# MDTS - Malta Driving Test Simulator
 
-![The Way route simulator](image.png)
+![MDTS - Malta Driving Test Simulator](image.png)
 
-The Way is a Google Street View–based practice and driving-test simulator. Exam routes contain ordered examiner commands, answers, checkpoints, and penalties. Practice messages are maintained separately and appear only in Practice mode.
+MDTS is a Google Street View–based practice and driving-test simulator. Exam routes contain ordered examiner commands, answers, checkpoints, and penalties. Practice messages are maintained separately and appear only in Practice mode.
 
 ## Getting Started
 
