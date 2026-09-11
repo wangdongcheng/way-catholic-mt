@@ -8,6 +8,7 @@ export const OBSERVATION_STATUS = Object.freeze({
   PENDING: "pending",
   ACTIVE: "active",
   ACKNOWLEDGED: "acknowledged",
+  COMPLETED: "completed",
   MISSED: "missed",
   SHOWN: "shown",
 });
@@ -34,7 +35,7 @@ export function createObservationEngine({
   onAcknowledged = () => {},
   onMissed = () => {},
   onIncorrect = () => {},
-  onActiveChange = () => {},
+  onVisibilityChange = () => {},
 }) {
   const defaults = document?.defaults || {};
   const events = applyDefaults(document).filter((event) =>
@@ -45,23 +46,24 @@ export function createObservationEngine({
   const positions = new Map();
   const states = new Map();
   let maxRadius = 0;
-  let lastActiveCount = null;
+  let lastVisibleCount = null;
 
-  function notifyActiveChange() {
-    const activeEventIds = events
+  function notifyVisibilityChange() {
+    const visibleEventIds = events
       .filter((event) =>
-        states.get(event.id) === OBSERVATION_STATUS.ACTIVE
+        states.get(event.id) === OBSERVATION_STATUS.ACTIVE ||
+        states.get(event.id) === OBSERVATION_STATUS.ACKNOWLEDGED
       )
       .map((event) => event.id);
 
-    if (activeEventIds.length === lastActiveCount) {
+    if (visibleEventIds.length === lastVisibleCount) {
       return;
     }
 
-    lastActiveCount = activeEventIds.length;
-    onActiveChange({
-      hasActive: activeEventIds.length > 0,
-      activeEventIds,
+    lastVisibleCount = visibleEventIds.length;
+    onVisibilityChange({
+      hasVisible: visibleEventIds.length > 0,
+      visibleEventIds,
     });
   }
 
@@ -72,7 +74,7 @@ export function createObservationEngine({
       states.set(event.id, OBSERVATION_STATUS.PENDING);
     }
 
-    notifyActiveChange();
+    notifyVisibilityChange();
   }
 
   function cachePosition(event, position) {
@@ -127,13 +129,18 @@ export function createObservationEngine({
     return target ? calculateDistanceMeters(position, target) : Infinity;
   }
 
-  function checkActiveEvents(position) {
+  function checkTrackedEvents(position) {
     if (mode !== "exam") {
       return;
     }
 
     for (const event of events) {
-      if (states.get(event.id) !== OBSERVATION_STATUS.ACTIVE) {
+      const status = states.get(event.id);
+
+      if (
+        status !== OBSERVATION_STATUS.ACTIVE &&
+        status !== OBSERVATION_STATUS.ACKNOWLEDGED
+      ) {
         continue;
       }
 
@@ -142,11 +149,15 @@ export function createObservationEngine({
       const distance = distanceTo(event, position);
 
       if (distance > answerRadius) {
-        states.set(event.id, OBSERVATION_STATUS.MISSED);
-        onMissed(event, {
-          distance,
-          penalty: Number(event.penaltyOnMiss) || 0,
-        });
+        if (status === OBSERVATION_STATUS.ACTIVE) {
+          states.set(event.id, OBSERVATION_STATUS.MISSED);
+          onMissed(event, {
+            distance,
+            penalty: Number(event.penaltyOnMiss) || 0,
+          });
+        } else {
+          states.set(event.id, OBSERVATION_STATUS.COMPLETED);
+        }
       }
     }
   }
@@ -158,7 +169,7 @@ export function createObservationEngine({
       return;
     }
 
-    checkActiveEvents(position);
+    checkTrackedEvents(position);
 
     const nearby = spatialIndex.getNearby(
       position.lat(),
@@ -188,7 +199,7 @@ export function createObservationEngine({
       }
     }
 
-    notifyActiveChange();
+    notifyVisibilityChange();
   }
 
   function acknowledge(observationType) {
@@ -205,11 +216,15 @@ export function createObservationEngine({
       const active = events.filter((event) =>
         states.get(event.id) === OBSERVATION_STATUS.ACTIVE
       );
-      const penalty = active.length > 0
-        ? Math.max(...active.map((event) =>
-            Number(event.penaltyOnIncorrect) || 0
-          ))
-        : Number(defaults.penaltyOnIncorrect) || 0;
+
+      if (active.length === 0) {
+        return [];
+      }
+
+      const penalty = Math.max(...active.map((event) =>
+        Number(event.penaltyOnIncorrect) ||
+        Number(defaults.penaltyOnIncorrect) || 0
+      ));
 
       onIncorrect({
         observationType,
@@ -224,7 +239,7 @@ export function createObservationEngine({
       onAcknowledged(event);
     }
 
-    notifyActiveChange();
+    notifyVisibilityChange();
 
     return matched.map((event) => event.id);
   }

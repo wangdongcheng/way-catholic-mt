@@ -39,7 +39,7 @@ import {
   showModeSelection,
   showObservationToolbar,
   showRouteMessage,
-  setObservationAttention,
+  setObservationToolbarVisible,
   updatePanoramaInfo,
   updatePenaltyScore,
   updateRouteName,
@@ -347,8 +347,8 @@ async function initApp() {
         answeredAt: Date.now(),
       });
     },
-    onActiveChange: ({ hasActive }) => {
-      setObservationAttention(hasActive);
+    onVisibilityChange: ({ hasVisible }) => {
+      setObservationToolbarVisible(hasVisible);
     },
   });
   const criticalViolationEngine = createCriticalViolationEngine({
@@ -379,6 +379,7 @@ async function initApp() {
         onSelect: (observationType) =>
           observationEngine.acknowledge(observationType),
       });
+      setObservationToolbarVisible(false);
     } else {
       hideObservationToolbar();
     }

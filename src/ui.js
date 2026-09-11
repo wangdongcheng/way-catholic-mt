@@ -573,11 +573,16 @@ export function showObservationToolbar(types, { onSelect }) {
     button.dataset.observationType = type.id;
     button.textContent = type.label;
     button.addEventListener("click", () => {
+      const acknowledgedEventIds = onSelect(type.id) || [];
+
+      if (acknowledgedEventIds.length === 0) {
+        return;
+      }
+
       button.classList.remove("recorded");
       void button.offsetWidth;
       button.classList.add("recorded");
       setTimeout(() => button.classList.remove("recorded"), 650);
-      onSelect(type.id);
     });
     buttons.appendChild(button);
   }
@@ -586,18 +591,15 @@ export function showObservationToolbar(types, { onSelect }) {
 }
 
 export function hideObservationToolbar() {
-  const toolbar = document.getElementById("observation-toolbar");
-  if (toolbar) {
-    toolbar.hidden = true;
-    toolbar.classList.remove("has-active-observation");
-  }
+  setObservationToolbarVisible(false);
 }
 
-export function setObservationAttention(hasActive) {
-  document.getElementById("observation-toolbar")?.classList.toggle(
-    "has-active-observation",
-    Boolean(hasActive)
-  );
+export function setObservationToolbarVisible(visible) {
+  const toolbar = document.getElementById("observation-toolbar");
+
+  if (toolbar) {
+    toolbar.hidden = !visible;
+  }
 }
 
 export function showExamFailure(failure, { onRestart }) {
