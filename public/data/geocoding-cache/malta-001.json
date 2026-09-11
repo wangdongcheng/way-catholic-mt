@@ -371,6 +371,139 @@
       "lng": 14.504960411837077,
       "label": "Saint Anne Street, Floriana",
       "cachedAt": "2026-09-10T20:32:43.611Z"
+    },
+    {
+      "panoId": "NjeGrTMXckcXafljxt_plw",
+      "lat": 35.888997956351446,
+      "lng": 14.503031734653883,
+      "label": "Floriana",
+      "cachedAt": "2026-09-11T20:56:13.799Z"
+    },
+    {
+      "panoId": "P1G5Tfp0XeC7Uz8s8Vc52Q",
+      "lat": 35.88902088841755,
+      "lng": 14.50294446397796,
+      "label": "Floriana",
+      "cachedAt": "2026-09-11T20:56:28.748Z"
+    },
+    {
+      "panoId": "N4jRcTsZ7T-KfHhqHoQf_g",
+      "lat": 35.889030497909644,
+      "lng": 14.50279533966201,
+      "label": "Floriana",
+      "cachedAt": "2026-09-11T20:56:30.952Z"
+    },
+    {
+      "panoId": "RA-CnOPvPuzSWaNBRj0eAQ",
+      "lat": 35.88975523555427,
+      "lng": 14.503802598216256,
+      "label": "F.S. Fenech, Floriana",
+      "cachedAt": "2026-09-11T22:27:10.638Z"
+    },
+    {
+      "panoId": "diYP0BmUrR1Mtk7-mxWb6g",
+      "lat": 35.8903067401233,
+      "lng": 14.504044504802925,
+      "label": "Floriana",
+      "cachedAt": "2026-09-11T22:27:13.030Z"
+    },
+    {
+      "panoId": "8L4Ga_Tnpl8UmqBN09FZpw",
+      "lat": 35.89095611703728,
+      "lng": 14.504310673597786,
+      "label": "Triq Sarria, Il-Furjana",
+      "cachedAt": "2026-09-11T22:58:03.171Z"
+    },
+    {
+      "panoId": "6Dlkl7fst0K075Ox_raNPw",
+      "lat": 35.88958836372358,
+      "lng": 14.503717726600721,
+      "label": "Triq Emvin Cremona, Il-Furjana",
+      "cachedAt": "2026-09-11T23:15:50.772Z"
+    },
+    {
+      "panoId": "RPaY4PoDACUvRV8iEOUzfw",
+      "lat": 35.89141815582404,
+      "lng": 14.504219936202398,
+      "label": "Floriana",
+      "cachedAt": "2026-09-11T23:57:10.899Z"
+    },
+    {
+      "panoId": "bhSSMvBzFewGa2hb1a-lCw",
+      "lat": 35.891603948792216,
+      "lng": 14.504175945026635,
+      "label": "Triq Sarria, Il-Furjana",
+      "cachedAt": "2026-09-11T23:57:12.090Z"
+    },
+    {
+      "panoId": "tY8vyx-RmVywO77bZwCdxg",
+      "lat": 35.8915312620764,
+      "lng": 14.504035439964175,
+      "label": "Triq Sarria, Floriana",
+      "cachedAt": "2026-09-11T23:57:13.820Z"
+    },
+    {
+      "panoId": "fG2D1i34mCIhU9HznMtHXg",
+      "lat": 35.89158742992372,
+      "lng": 14.503946657896094,
+      "label": "Triq Sarria, Floriana",
+      "cachedAt": "2026-09-11T23:57:14.518Z"
+    },
+    {
+      "panoId": "b1LHXR0arGKztirZC3QigQ",
+      "lat": 35.89164861570864,
+      "lng": 14.503845522831803,
+      "label": "Triq Sarria, Il-Furjana",
+      "cachedAt": "2026-09-11T23:57:16.313Z"
+    },
+    {
+      "panoId": "5j6nqqDwPT_A_rQdnRcqNw",
+      "lat": 35.89170079065281,
+      "lng": 14.50375478571906,
+      "label": "Pjazza Emanuel S. Tonna, Il-Furjana",
+      "cachedAt": "2026-09-11T23:57:17.006Z"
+    },
+    {
+      "panoId": "CB-lsjKYeUlTT8DGGH02Fw",
+      "lat": 35.891753749796024,
+      "lng": 14.503667603491273,
+      "label": "Pjazza Emanuel S. Tonna, Il-Furjana",
+      "cachedAt": "2026-09-11T23:57:17.882Z"
+    },
+    {
+      "panoId": "oFBlKVBlVzknC7q1Ahyt5Q",
+      "lat": 35.89181676414295,
+      "lng": 14.503588686289218,
+      "label": "Pjazza Emanuel S. Tonna, Il-Furjana",
+      "cachedAt": "2026-09-11T23:57:20.536Z"
+    },
+    {
+      "panoId": "MYQxU3Z55rWzVznkUoLsQg",
+      "lat": 35.89189628855824,
+      "lng": 14.50353705242171,
+      "label": "Triq Sarria, Il-Furjana",
+      "cachedAt": "2026-09-11T23:57:21.958Z"
+    },
+    {
+      "panoId": "RqW6rMksL_njspMpSnJehw",
+      "lat": 35.89198665684637,
+      "lng": 14.503528343096415,
+      "label": "Triq Sarria, Il-Furjana",
+      "cachedAt": "2026-09-11T23:57:23.321Z"
+    },
+    {
+      "panoId": "ESx4hG9S5OKW9KXtFC1KLQ",
+      "lat": 35.89207822665578,
+      "lng": 14.503553582367026,
+      "label": "Triq Sarria, Il-Furjana",
+      "cachedAt": "2026-09-11T23:57:24.941Z"
+    },
+    {
+      "panoId": "bQV0MCFvIZfd8HfFvob_5w",
+      "lat": 35.89220604321351,
+      "lng": 14.503591885634435,
+      "label": "Triq Sarria, Il-Furjana",
+      "cachedAt": "2026-09-11T23:57:25.825Z"
     }
   ]
 }
