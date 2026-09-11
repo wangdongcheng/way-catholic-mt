@@ -8,5 +8,41 @@
     "windowMs": 60000,
     "oncePerSession": true
   },
-  "events": []
+  "events": [
+    {
+      "id": "critical-violation-001",
+      "type": "critical-violation",
+      "rule": "wrong-way-entry",
+      "enabled": true,
+      "oncePerSession": true,
+      "triggerCheckpoint": {
+        "location": {
+          "lat": 35.8884924,
+          "lng": 14.5032812
+        },
+        "radius": 10,
+        "pano": null
+      },
+      "forbiddenDestination": {
+        "location": {
+          "lat": 35.8889935,
+          "lng": 14.5030559
+        },
+        "radius": 10,
+        "pano": null
+      },
+      "windowMs": 30000,
+      "practiceWarning": {
+        "title": "Serious driving error",
+        "message": "A critical driving violation was detected.",
+        "buttonLabel": "I understand",
+        "autoCloseMs": 0
+      },
+      "examFailure": {
+        "title": "Test failed",
+        "message": "A critical driving violation was detected.",
+        "reasonCode": "CRITICAL_VIOLATION"
+      }
+    }
+  ]
 }
