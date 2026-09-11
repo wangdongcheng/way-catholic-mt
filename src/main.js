@@ -205,7 +205,7 @@ function completeActiveCommand(selectedIds) {
   hideExaminerCommand();
 
   if (message) {
-    showRouteMessage(message);
+    showRouteMessage(message, { modal: false });
   }
 
   showNextCommand();
@@ -239,7 +239,8 @@ function expireActiveCommand(distance) {
       message: `No answer was recorded. ${penalty} point deducted.`,
       autoCloseMs: 0,
       priority: "high",
-    }
+    },
+    { modal: false }
   );
 
   showNextCommand();
