@@ -74,6 +74,12 @@
   </dialog>
 
   <section
+    id="examiner-feedback-board"
+    aria-label="Examiner feedback"
+    aria-live="polite"
+  ></section>
+
+  <section
     id="examiner-command"
     role="dialog"
     aria-modal="false"
@@ -108,6 +114,17 @@
   <div id="penalty-status">
     Penalty: <span id="penalty-score">0</span>
   </div>
+
+  <dialog id="restart-confirm-dialog" aria-labelledby="restart-confirm-title">
+    <div id="restart-confirm-panel">
+      <h2 id="restart-confirm-title">Restart this drive?</h2>
+      <p>Your current progress and penalties will be cleared.</p>
+      <div id="restart-confirm-actions">
+        <button id="restart-cancel" class="secondary-button" type="button">Cancel</button>
+        <button id="restart-confirm" type="button">Restart</button>
+      </div>
+    </div>
+  </dialog>
 
   <button id="restart-button" type="button" aria-label="Restart route">
     ↺ Restart

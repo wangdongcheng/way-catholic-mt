@@ -224,7 +224,6 @@ function createEvent(type, position) {
       penaltyOnIncorrect: defaults.penaltyOnIncorrect ?? 1,
       practiceMessage: {
         message: "New practice observation message",
-        autoCloseMs: 8000,
         priority: "normal",
       },
     });
@@ -259,7 +258,6 @@ function createEvent(type, position) {
     penaltyOnOutOfRange: 1,
     outOfRangeRouteMessage: {
       message: "You left the answering area without answering. 1 point deducted.",
-      autoCloseMs: 0,
       priority: "high",
     },
   };
@@ -269,24 +267,20 @@ function createEvent(type, position) {
     event.penalty = 2;
     event.correctRouteMessage = {
       message: "Correct sequence.",
-      autoCloseMs: 5000,
       priority: "high",
     };
     event.incorrectRouteMessage = {
       message: "The steps were not selected in the correct order.",
-      autoCloseMs: 0,
       priority: "high",
     };
   } else if (type === "multiple") {
     event.penalty = 1;
     event.correctRouteMessage = {
       message: "Correct selection.",
-      autoCloseMs: 5000,
       priority: "high",
     };
     event.incorrectRouteMessage = {
       message: "The selected answers were not correct.",
-      autoCloseMs: 0,
       priority: "high",
     };
   }

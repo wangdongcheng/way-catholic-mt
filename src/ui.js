@@ -6,11 +6,14 @@ import {
 const currentInfoEnabled =
   new URLSearchParams(window.location.search).get("currentinfo") === "1";
 
+export const EVENT_MESSAGE_AUTO_CLOSE_MS = 10000;
+
 let infoHideTimer = null;
 let locationLookupTimer = null;
 let routeMessageTimer = null;
 let routeMessageActive = false;
 let routeMessageQueue = [];
+const examinerFeedbackTimers = new Set();
 let examinerState = null;
 let locationUpdatesEnabled = true;
 
@@ -465,6 +468,56 @@ export function clearRouteMessages() {
   closeCurrentRouteMessage();
 }
 
+function scheduleExaminerFeedback(callback, delay) {
+  const timer = setTimeout(() => {
+    examinerFeedbackTimers.delete(timer);
+    callback();
+  }, delay);
+
+  examinerFeedbackTimers.add(timer);
+}
+
+export function showExaminerFeedback(input, status) {
+  const board = document.getElementById("examiner-feedback-board");
+  const message = typeof input === "string" ? input : input?.message;
+
+  if (!board || !message) {
+    return;
+  }
+
+  const labels = {
+    correct: "Correct",
+    incorrect: "Incorrect",
+    "out-of-range": "No answer recorded",
+  };
+  const item = document.createElement("article");
+  const title = document.createElement("strong");
+  const text = document.createElement("span");
+
+  item.className = "examiner-feedback-item";
+  item.dataset.status = status;
+  title.className = "examiner-feedback-title";
+  title.textContent = input?.title || labels[status] || "Examiner";
+  text.className = "examiner-feedback-message";
+  text.textContent = message;
+  item.append(title, text);
+  board.prepend(item);
+
+  scheduleExaminerFeedback(() => {
+    item.classList.add("leaving");
+    scheduleExaminerFeedback(() => item.remove(), 180);
+  }, EVENT_MESSAGE_AUTO_CLOSE_MS);
+}
+
+export function clearExaminerFeedback() {
+  for (const timer of examinerFeedbackTimers) {
+    clearTimeout(timer);
+  }
+
+  examinerFeedbackTimers.clear();
+  document.getElementById("examiner-feedback-board")?.replaceChildren();
+}
+
 function updateExaminerControls() {
   if (!examinerState) {
     return;
@@ -664,8 +717,23 @@ export function hideExamFailure() {
 }
 
 export function bindUiActions({ onRestart }) {
+  const restartDialog = document.getElementById("restart-confirm-dialog");
+  const restartCancel = document.getElementById("restart-cancel");
+  const restartConfirm = document.getElementById("restart-confirm");
+
   document.getElementById("restart-button")
-    ?.addEventListener("click", onRestart);
+    ?.addEventListener("click", () => {
+      if (restartDialog instanceof HTMLDialogElement && !restartDialog.open) {
+        restartDialog.showModal();
+        restartCancel?.focus();
+      }
+    });
+
+  restartCancel?.addEventListener("click", () => restartDialog?.close());
+  restartConfirm?.addEventListener("click", () => {
+    restartDialog?.close();
+    onRestart();
+  });
 
   document.getElementById("route-message-ok")
     ?.addEventListener("click", closeCurrentRouteMessage);

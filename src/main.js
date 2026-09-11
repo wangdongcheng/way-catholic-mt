@@ -22,7 +22,9 @@ import {
 } from "./streetview.js";
 import {
   bindUiActions,
+  clearExaminerFeedback,
   clearRouteMessages,
+  EVENT_MESSAGE_AUTO_CLOSE_MS,
   getExaminerSelection,
   hideCurrentInfo,
   hideExamFailure,
@@ -33,6 +35,7 @@ import {
   scheduleLocationUpdate,
   setLocationUpdatesEnabled,
   showExaminerCommand,
+  showExaminerFeedback,
   showExamFailure,
   showExamStart,
   showInfoTemporarily,
@@ -58,8 +61,6 @@ const currentEventDebug = {
   observations: [],
   criticalViolations: [],
 };
-
-const PRACTICE_OBSERVATION_AUTO_CLOSE_MS = 10000;
 
 function updateEventDebug(kind, events) {
   currentEventDebug[kind] = events;
@@ -205,7 +206,7 @@ function completeActiveCommand(selectedIds) {
   hideExaminerCommand();
 
   if (message) {
-    showRouteMessage(message, { modal: false });
+    showExaminerFeedback(message, correct ? "correct" : "incorrect");
   }
 
   showNextCommand();
@@ -234,13 +235,11 @@ function expireActiveCommand(distance) {
   activeCommand = null;
   hideExaminerCommand();
 
-  showRouteMessage(
+  showExaminerFeedback(
     event.outOfRangeRouteMessage || {
       message: `No answer was recorded. ${penalty} point deducted.`,
-      autoCloseMs: 0,
-      priority: "high",
     },
-    { modal: false }
+    "out-of-range"
   );
 
   showNextCommand();
@@ -345,7 +344,7 @@ async function initApp() {
     panorama,
     onPracticeMessage: (message) => showRouteMessage(message, {
       modal: false,
-      autoCloseMs: PRACTICE_OBSERVATION_AUTO_CLOSE_MS,
+      autoCloseMs: EVENT_MESSAGE_AUTO_CLOSE_MS,
     }),
     onAcknowledged: (event) => {
       recordResult({
@@ -498,6 +497,7 @@ async function initApp() {
     hideExamStart();
     hideExamFailure();
     hideObservationToolbar();
+    clearExaminerFeedback();
     clearRouteMessages();
     hideCurrentInfo();
     updatePenaltyScore(0);
@@ -532,6 +532,7 @@ async function initApp() {
     commandQueue = [];
     hideExaminerCommand();
     hideObservationToolbar();
+    clearExaminerFeedback();
     clearRouteMessages();
     hideCurrentInfo();
     setStreetViewLocked(panorama, true);

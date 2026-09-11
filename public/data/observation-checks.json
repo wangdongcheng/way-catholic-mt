@@ -34,7 +34,6 @@
       "penaltyOnIncorrect": 1,
       "practiceMessage": {
         "message": "Check the road ahead and identify the important road features.",
-        "autoCloseMs": 8000,
         "priority": "normal"
       }
     },
@@ -50,7 +49,6 @@
       "pano": null,
       "practiceMessage": {
         "message": "The road narrows ahead. Reduce speed and be prepared to give way.",
-        "autoCloseMs": 8000,
         "priority": "normal"
       }
     }

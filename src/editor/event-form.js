@@ -175,12 +175,6 @@ function observationFields(event) {
           "practiceMessageText",
           messageText(event.practiceMessage)
         )}
-        ${inputField(
-          "Auto-close (ms, 0 = OK)",
-          "practiceAutoCloseMs",
-          event.practiceMessage?.autoCloseMs ?? 0,
-          { type: "number", min: 0 }
-        )}
       </div>
     </section>
 
@@ -536,7 +530,7 @@ export function createEventForm({ container, title, store }) {
           "lat", "lng", "radius", "headingMin", "headingMax",
           "autoCloseMs", "answerRadius", "penaltyOnOutOfRange", "penalty",
           "penaltyOnMiss",
-          "penaltyOnIncorrect", "practiceAutoCloseMs",
+          "penaltyOnIncorrect",
         ]);
 
         if (field === "required") {
@@ -549,7 +543,6 @@ export function createEventForm({ container, title, store }) {
           event.outOfRangeRouteMessage = {
             ...(event.outOfRangeRouteMessage || {}),
             message: target.value,
-            autoCloseMs: 0,
             priority: "high",
           };
         } else if (field === "correctMessage" || field === "incorrectMessage") {
@@ -559,18 +552,12 @@ export function createEventForm({ container, title, store }) {
           event[key] = {
             ...(event[key] || {}),
             message: target.value,
-            autoCloseMs: field === "correctMessage" ? 5000 : 0,
             priority: "high",
           };
         } else if (field === "practiceMessageText") {
           event.practiceMessage = {
             ...(event.practiceMessage || {}),
             message: target.value,
-          };
-        } else if (field === "practiceAutoCloseMs") {
-          event.practiceMessage = {
-            ...(event.practiceMessage || {}),
-            autoCloseMs: Number(target.value),
           };
         } else if (numericFields.has(field)) {
           if (target.value === "" && field.startsWith("heading")) {
@@ -604,7 +591,6 @@ export function createEventForm({ container, title, store }) {
           option.routeMessage = {
             ...(option.routeMessage || {}),
             message: target.value,
-            autoCloseMs: option.correct ? 5000 : 0,
             priority: "high",
           };
         } else {

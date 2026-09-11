@@ -27,7 +27,6 @@
           "penalty": 0,
           "routeMessage": {
             "message": "Option 1",
-            "autoCloseMs": 5000,
             "priority": "high"
           }
         },
@@ -38,7 +37,6 @@
           "penalty": 1,
           "routeMessage": {
             "message": "Option 2",
-            "autoCloseMs": 0,
             "priority": "high"
           }
         },
@@ -49,7 +47,6 @@
           "penalty": 1,
           "routeMessage": {
             "message": "Option 3",
-            "autoCloseMs": 0,
             "priority": "high"
           }
         }
@@ -57,7 +54,6 @@
       "penaltyOnOutOfRange": 1,
       "outOfRangeRouteMessage": {
         "message": "You left the answering area without answering. 1 point deducted.",
-        "autoCloseMs": 0,
         "priority": "high"
       },
       "headingMin": 340,
