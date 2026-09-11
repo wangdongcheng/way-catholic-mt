@@ -29,9 +29,30 @@ export function createCriticalViolationEngine({
   mode,
   panorama,
   onViolation,
+  onDebugStateChange = () => {},
 }) {
   const events = applyDefaults(document);
   const states = new Map();
+
+  function notifyDebugStateChange(now = Date.now()) {
+    const debugEvents = events.flatMap((event) => {
+      const state = states.get(event.id);
+
+      if (state?.status !== STATUS.ARMED && state?.status !== STATUS.TRIGGERED) {
+        return [];
+      }
+
+      return [{
+        id: event.id,
+        status: state.status,
+        remainingMs: state.status === STATUS.ARMED
+          ? Math.max(0, state.expiresAt - now)
+          : null,
+      }];
+    });
+
+    onDebugStateChange(debugEvents);
+  }
 
   function reset() {
     states.clear();
@@ -43,6 +64,8 @@ export function createCriticalViolationEngine({
         expiresAt: null,
       });
     }
+
+    notifyDebugStateChange();
   }
 
   function matchesPoint(point, position) {
@@ -133,6 +156,8 @@ export function createCriticalViolationEngine({
         });
       }
     }
+
+    notifyDebugStateChange(now);
   }
 
   reset();

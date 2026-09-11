@@ -40,6 +40,7 @@ import {
   showObservationToolbar,
   showRouteMessage,
   setObservationToolbarVisible,
+  updateCurrentEventInfo,
   updatePanoramaInfo,
   updatePenaltyScore,
   updateRouteName,
@@ -52,8 +53,32 @@ let results = [];
 let totalPenalty = 0;
 let panorama = null;
 let driveStarted = false;
+const currentEventDebug = {
+  examinerCommands: [],
+  observations: [],
+  criticalViolations: [],
+};
 
 const PRACTICE_OBSERVATION_AUTO_CLOSE_MS = 10000;
+
+function updateEventDebug(kind, events) {
+  currentEventDebug[kind] = events;
+  updateCurrentEventInfo(currentEventDebug);
+}
+
+function syncExaminerEventDebug() {
+  const events = [];
+
+  if (activeCommand) {
+    events.push({ id: activeCommand.event.id, status: "active" });
+  }
+
+  events.push(...commandQueue.map(({ event }) => ({
+    id: event.id,
+    status: "queued",
+  })));
+  updateEventDebug("examinerCommands", events);
+}
 
 function getEventPenalty(event, selectedIds, isCorrect) {
   if (isCorrect) {
@@ -121,6 +146,7 @@ function recordResult(result) {
 
 function showNextCommand() {
   if (activeCommand || !panorama) {
+    syncExaminerEventDebug();
     return;
   }
 
@@ -144,8 +170,11 @@ function showNextCommand() {
     showExaminerCommand(next.event, {
       onSubmit: completeActiveCommand,
     });
+    syncExaminerEventDebug();
     return;
   }
+
+  syncExaminerEventDebug();
 }
 
 function completeActiveCommand(selectedIds) {
@@ -350,12 +379,18 @@ async function initApp() {
     onVisibilityChange: ({ hasVisible }) => {
       setObservationToolbarVisible(hasVisible);
     },
+    onDebugStateChange: (events) => {
+      updateEventDebug("observations", events);
+    },
   });
   const criticalViolationEngine = createCriticalViolationEngine({
     document: criticalDocument,
     mode,
     panorama,
     onViolation: handleCriticalViolation,
+    onDebugStateChange: (events) => {
+      updateEventDebug("criticalViolations", events);
+    },
   });
   let eventEngineInitialized = false;
   let observationEngineInitialized = false;
@@ -452,6 +487,7 @@ async function initApp() {
     setLocationUpdatesEnabled(false);
     activeCommand = null;
     commandQueue = [];
+    syncExaminerEventDebug();
     results = [];
     totalPenalty = 0;
     eventEngine.reset();

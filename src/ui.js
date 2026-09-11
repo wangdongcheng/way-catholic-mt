@@ -72,6 +72,40 @@ export function updateRouteName(name) {
   }
 }
 
+function formatCurrentEvents(events) {
+  if (!events?.length) {
+    return "-";
+  }
+
+  return events.map(({ id, status, remainingMs }) => {
+    const remaining = Number.isFinite(remainingMs)
+      ? `, ${Math.ceil(remainingMs / 1000)}s remaining`
+      : "";
+
+    return `${id} [${status}${remaining}]`;
+  }).join(", ");
+}
+
+export function updateCurrentEventInfo({
+  examinerCommands = [],
+  observations = [],
+  criticalViolations = [],
+}) {
+  const values = [
+    ["current-examiner-events", examinerCommands],
+    ["current-observation-events", observations],
+    ["current-critical-events", criticalViolations],
+  ];
+
+  for (const [elementId, events] of values) {
+    const element = document.getElementById(elementId);
+
+    if (element) {
+      element.textContent = formatCurrentEvents(events);
+    }
+  }
+}
+
 export function updatePenaltyScore(penalty) {
   const element = document.getElementById("penalty-score");
 

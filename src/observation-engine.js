@@ -36,6 +36,7 @@ export function createObservationEngine({
   onMissed = () => {},
   onIncorrect = () => {},
   onVisibilityChange = () => {},
+  onDebugStateChange = () => {},
 }) {
   const defaults = document?.defaults || {};
   const events = applyDefaults(document).filter((event) =>
@@ -47,6 +48,26 @@ export function createObservationEngine({
   const states = new Map();
   let maxRadius = 0;
   let lastVisibleCount = null;
+
+  function notifyDebugStateChange(position = panorama.getPosition()) {
+    const debugEvents = events.flatMap((event) => {
+      const status = states.get(event.id);
+      const isTracked = status === OBSERVATION_STATUS.ACTIVE ||
+        status === OBSERVATION_STATUS.ACKNOWLEDGED;
+      const answerRadius = Number(event.answerRadius) ||
+        Number(event.radius) || 0;
+      const isVisiblePracticeEvent = mode === "practice" &&
+        status === OBSERVATION_STATUS.SHOWN &&
+        position &&
+        distanceTo(event, position) <= answerRadius;
+
+      return isTracked || isVisiblePracticeEvent
+        ? [{ id: event.id, status }]
+        : [];
+    });
+
+    onDebugStateChange(debugEvents);
+  }
 
   function notifyVisibilityChange() {
     const visibleEventIds = events
@@ -75,6 +96,7 @@ export function createObservationEngine({
     }
 
     notifyVisibilityChange();
+    notifyDebugStateChange();
   }
 
   function cachePosition(event, position) {
@@ -200,6 +222,7 @@ export function createObservationEngine({
     }
 
     notifyVisibilityChange();
+    notifyDebugStateChange(position);
   }
 
   function acknowledge(observationType) {
@@ -240,6 +263,7 @@ export function createObservationEngine({
     }
 
     notifyVisibilityChange();
+    notifyDebugStateChange();
 
     return matched.map((event) => event.id);
   }
