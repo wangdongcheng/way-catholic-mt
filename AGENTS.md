@@ -12,10 +12,11 @@ This file defines the working rules for AI coding agents in the entire repositor
 ## Authorization Gate
 
 - Analysis, explanation, design, review, and read-only inspection do not authorize code changes.
-- Modify application code or project data only when the user's current request contains the exact phrase `push to preview` as an operative instruction.
-- The phrase is case-sensitive and must be spelled exactly. Similar wording, translations, partial phrases, or a quoted example do not grant authorization.
+- Modify repository files only when the user's current request contains either `push to preview` or `commit to preview` as an operative instruction.
+- `push to preview` authorizes the requested changes, a local commit on `preview`, and a push to the remote `preview` branch.
+- `commit to preview` authorizes the requested changes and a local commit on `preview`, but it does not authorize a push.
+- Both phrases are case-sensitive and must be spelled exactly. Similar wording, translations, partial phrases, or quoted examples do not grant authorization.
 - Do not reuse authorization from an earlier request for a later task.
-- A request that explicitly asks for a documentation-only local file and explicitly says not to push authorizes only that named documentation file.
 - When authorization is absent, provide a design or diagnosis without changing repository files.
 
 ## Git and Push Rules
@@ -23,6 +24,7 @@ This file defines the working rules for AI coding agents in the entire repositor
 - Never push directly to `main`.
 - The only branch an agent may push to is `preview`.
 - Push only when the current user request contains the exact operative phrase `push to preview`.
+- When the current request contains the exact operative phrase `commit to preview`, commit the requested changes locally on `preview` and do not push them.
 - Do not create or push another branch unless the user explicitly changes these rules.
 - Never force-push.
 - Before writing to `preview`, fetch or verify its current remote head and preserve all newer remote changes.
@@ -32,7 +34,7 @@ This file defines the working rules for AI coding agents in the entire repositor
 - Commit messages must be entirely in English, including the subject and body.
 - Prefix AI-authored commit subjects with `ChatGPT: `.
 - Example: `ChatGPT: Add observation checkpoint feedback`.
-- Do not commit or push unless the user has requested that operation. In particular, this `AGENTS.md` creation request must remain local.
+- Commit only when the current request contains one of the two authorized phrases. Push only when it contains `push to preview`.
 
 ## Scope Discipline
 
@@ -92,7 +94,7 @@ This file defines the working rules for AI coding agents in the entire repositor
 
 ## Verification
 
-Run the checks relevant to the changed files before any authorized push:
+Run the checks relevant to the changed files before any authorized commit or push:
 
 1. Run `git diff --check`.
 2. Run `node --check` for changed JavaScript files.
@@ -109,4 +111,5 @@ If a relevant check cannot run, report that clearly instead of claiming full ver
 - State what changed and which files were affected.
 - State which verification commands passed or could not run.
 - If a push was authorized, confirm that only `preview` changed and provide the commit link.
-- If no push was authorized, explicitly state that the work remains local and uncommitted.
+- If `commit to preview` was authorized, provide the local commit SHA and title and explicitly state that it was not pushed.
+- If neither phrase was authorized, explicitly state that no repository files were changed.
