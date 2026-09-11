@@ -53,7 +53,7 @@ let totalPenalty = 0;
 let panorama = null;
 let driveStarted = false;
 
-const PRACTICE_OBSERVATION_AUTO_CLOSE_MS = 20000;
+const PRACTICE_OBSERVATION_AUTO_CLOSE_MS = 10000;
 
 function getEventPenalty(event, selectedIds, isCorrect) {
   if (isCorrect) {
