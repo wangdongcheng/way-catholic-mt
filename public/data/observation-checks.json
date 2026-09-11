@@ -28,6 +28,8 @@
       "radius": 30,
       "answerRadius": 50,
       "pano": null,
+      "headingMin": 340,
+      "headingMax": 60,
       "penaltyOnMiss": 3,
       "penaltyOnIncorrect": 1,
       "practiceMessage": {

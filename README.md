@@ -419,6 +419,8 @@ Global observations are stored in `public/data/observation-checks.json`. They do
   "lng": 14.5032702,
   "radius": 30,
   "answerRadius": 50,
+  "headingMin": 340,
+  "headingMax": 60,
   "penaltyOnMiss": 3,
   "penaltyOnIncorrect": 1,
   "practiceMessage": {
@@ -428,6 +430,12 @@ Global observations are stored in `public/data/observation-checks.json`. They do
   }
 }
 ```
+
+`headingMin` and `headingMax` are optional. When both are omitted, the
+observation can trigger at any camera heading. When both are present, the
+observation triggers only while the Street View camera heading is inside the
+configured range. Both values must be provided together and must be between
+`0` and `360`. A range such as `340` to `60` crosses north.
 
 Set `examEnabled` to `false` for a teaching point that should appear in Practice but be ignored in Exam. Observation button definitions are stored in `public/data/observation-types.json`.
 

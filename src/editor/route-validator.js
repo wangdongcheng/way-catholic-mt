@@ -58,6 +58,32 @@ function validateObservationDocument(document) {
     if (!Number.isFinite(event.radius) || event.radius <= 0) {
       issues.push(issue("error", "Trigger radius must be greater than zero.", eventId));
     }
+    const hasHeadingMin = event.headingMin !== undefined;
+    const hasHeadingMax = event.headingMax !== undefined;
+
+    if (hasHeadingMin !== hasHeadingMax) {
+      issues.push(issue(
+        "error",
+        "Heading minimum and maximum must be provided together.",
+        eventId
+      ));
+    } else if (
+      hasHeadingMin &&
+      (
+        !Number.isFinite(event.headingMin) ||
+        !Number.isFinite(event.headingMax) ||
+        event.headingMin < 0 ||
+        event.headingMin > 360 ||
+        event.headingMax < 0 ||
+        event.headingMax > 360
+      )
+    ) {
+      issues.push(issue(
+        "error",
+        "Heading minimum and maximum must be between 0 and 360.",
+        eventId
+      ));
+    }
     if (!event.observationType?.trim()) {
       issues.push(issue("error", "Observation type is required.", eventId));
     }
