@@ -354,6 +354,10 @@ async function initApp() {
         penalty: 0,
         answeredAt: Date.now(),
       });
+      showExaminerFeedback(
+        "Observation recorded correctly.",
+        "correct"
+      );
     },
     onMissed: (event, { distance, penalty }) => {
       recordResult({
@@ -364,6 +368,10 @@ async function initApp() {
         distanceFromTarget: Number(distance.toFixed(1)),
         answeredAt: null,
       });
+      showExaminerFeedback(
+        "A required observation was missed.",
+        "missed"
+      );
     },
     onIncorrect: ({ observationType, activeEventIds, penalty }) => {
       recordResult({
@@ -375,6 +383,10 @@ async function initApp() {
         penalty,
         answeredAt: Date.now(),
       });
+      showExaminerFeedback(
+        "That observation was not enough.",
+        "not-enough"
+      );
     },
     onVisibilityChange: ({ hasVisible }) => {
       setObservationToolbarVisible(hasVisible);

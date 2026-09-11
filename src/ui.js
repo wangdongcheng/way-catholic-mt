@@ -488,6 +488,8 @@ export function showExaminerFeedback(input, status) {
   const labels = {
     correct: "Correct",
     incorrect: "Incorrect",
+    missed: "Missed",
+    "not-enough": "Not enough",
     "out-of-range": "No answer recorded",
   };
   const item = document.createElement("article");

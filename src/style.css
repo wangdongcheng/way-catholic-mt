@@ -262,7 +262,12 @@ body[data-mode="selection"] #restart-button {
   border-left-color: #22c55e;
 }
 
-.examiner-feedback-item[data-status="incorrect"] {
+.examiner-feedback-item[data-status="not-enough"] {
+  border-left-color: #eab308;
+}
+
+.examiner-feedback-item[data-status="incorrect"],
+.examiner-feedback-item[data-status="missed"] {
   border-left-color: #ef4444;
 }
 
