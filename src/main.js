@@ -53,6 +53,8 @@ let totalPenalty = 0;
 let panorama = null;
 let driveStarted = false;
 
+const PRACTICE_OBSERVATION_AUTO_CLOSE_MS = 20000;
+
 function getEventPenalty(event, selectedIds, isCorrect) {
   if (isCorrect) {
     return 0;
@@ -311,7 +313,10 @@ async function initApp() {
     mode,
     streetViewService: streetView.streetViewService,
     panorama,
-    onPracticeMessage: (message) => showRouteMessage(message),
+    onPracticeMessage: (message) => showRouteMessage(message, {
+      modal: false,
+      autoCloseMs: PRACTICE_OBSERVATION_AUTO_CLOSE_MS,
+    }),
     onAcknowledged: (event) => {
       recordResult({
         eventId: event.id,

@@ -183,6 +183,15 @@ body[data-mode="selection"] #restart-button {
   background: rgba(0, 0, 0, 0.45);
 }
 
+#route-message[data-modal="false"] {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  z-index: 1200;
+  margin: 0;
+  transform: translateX(-50%);
+}
+
 #route-message-panel {
   display: flex;
   align-items: center;

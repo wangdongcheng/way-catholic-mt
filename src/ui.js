@@ -317,14 +317,20 @@ export function hideExamStart() {
   }
 }
 
-function normalizeRouteMessage(input) {
+function normalizeRouteMessage(input, options = {}) {
+  const modal = options.modal !== false;
+  const autoCloseMsOverride = Number.isFinite(options.autoCloseMs)
+    ? options.autoCloseMs
+    : null;
+
   if (typeof input === "string") {
     return {
       message: input,
       title: "",
       buttonLabel: "OK",
-      autoCloseMs: 0,
+      autoCloseMs: autoCloseMsOverride ?? 0,
       priority: "normal",
+      modal,
     };
   }
 
@@ -332,10 +338,13 @@ function normalizeRouteMessage(input) {
     message: input?.message || "",
     title: input?.title || "",
     buttonLabel: input?.buttonLabel || "OK",
-    autoCloseMs: Number.isFinite(input?.autoCloseMs)
-      ? input.autoCloseMs
-      : 0,
+    autoCloseMs: autoCloseMsOverride ?? (
+      Number.isFinite(input?.autoCloseMs)
+        ? input.autoCloseMs
+        : 0
+    ),
     priority: input?.priority || "normal",
+    modal,
   };
 }
 
@@ -362,8 +371,17 @@ function displayNextRouteMessage() {
   }
   if (button) button.textContent = next.buttonLabel;
   dialog.dataset.priority = next.priority;
-  dialog.showModal();
-  document.getElementById("route-message-ok")?.focus();
+  dialog.dataset.modal = String(next.modal);
+
+  if (next.modal) {
+    dialog.showModal();
+  } else {
+    dialog.show();
+  }
+
+  if (next.modal) {
+    document.getElementById("route-message-ok")?.focus();
+  }
 
   clearTimeout(routeMessageTimer);
   if (next.autoCloseMs > 0) {
@@ -371,8 +389,8 @@ function displayNextRouteMessage() {
   }
 }
 
-export function showRouteMessage(message) {
-  const normalized = normalizeRouteMessage(message);
+export function showRouteMessage(message, options = {}) {
+  const normalized = normalizeRouteMessage(message, options);
 
   if (!normalized.message) {
     return;
