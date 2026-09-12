@@ -1,6 +1,6 @@
 {
   "id": "route-001",
-  "name": "Demo Route 1 — Single Choice",
+  "name": "Route 1 — Single Choice",
   "startState": {
     "lat": 35.8880832,
     "lng": 14.5029997,
@@ -27,7 +27,6 @@
           "penalty": 0,
           "routeMessage": {
             "message": "Option 1",
-            "autoCloseMs": 5000,
             "priority": "high"
           }
         },
@@ -38,7 +37,6 @@
           "penalty": 1,
           "routeMessage": {
             "message": "Option 2",
-            "autoCloseMs": 0,
             "priority": "high"
           }
         },
@@ -49,7 +47,6 @@
           "penalty": 1,
           "routeMessage": {
             "message": "Option 3",
-            "autoCloseMs": 0,
             "priority": "high"
           }
         }
@@ -57,23 +54,16 @@
       "penaltyOnOutOfRange": 1,
       "outOfRangeRouteMessage": {
         "message": "You left the answering area without answering. 1 point deducted.",
-        "autoCloseMs": 0,
         "priority": "high"
       },
       "headingMin": 340,
-      "headingMax": 60
-    },
-    {
-      "id": "route-message-001",
-      "type": "route-message",
-      "lat": 35.8889953,
-      "lng": 14.5032702,
-      "radius": 30,
-      "message": "Go Go Go",
-      "autoCloseMs": 8000,
-      "priority": "normal",
-      "headingMin": 340,
-      "headingMax": 60
+      "headingMax": 60,
+      "required": true,
+      "penaltyOnMiss": 5
     }
-  ]
+  ],
+  "navigation": {
+    "eventsAreCheckpoints": true,
+    "defaultPenaltyOnMiss": 5
+  }
 }

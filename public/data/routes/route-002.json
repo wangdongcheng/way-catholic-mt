@@ -53,20 +53,23 @@
       "penalty": 2,
       "correctRouteMessage": {
         "message": "Correct. All five steps were selected in the right order.",
-        "autoCloseMs": 5000,
         "priority": "high"
       },
       "incorrectRouteMessage": {
         "message": "The steps were not selected in the correct order. 2 points deducted.",
-        "autoCloseMs": 0,
         "priority": "high"
       },
       "penaltyOnOutOfRange": 1,
       "outOfRangeRouteMessage": {
         "message": "You left the answering area before completing the sequence. 1 point deducted.",
-        "autoCloseMs": 0,
         "priority": "high"
-      }
+      },
+      "required": true,
+      "penaltyOnMiss": 5
     }
-  ]
+  ],
+  "navigation": {
+    "eventsAreCheckpoints": true,
+    "defaultPenaltyOnMiss": 5
+  }
 }

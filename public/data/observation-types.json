@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "types": [
+    { "id": "stop-line", "label": "Stop line" },
+    { "id": "stop-sign", "label": "Stop sign" },
+    { "id": "speed-limit", "label": "Speed limit" },
+    { "id": "one-way", "label": "One-way sign" },
+    { "id": "pedestrian-crossing", "label": "Pedestrian crossing" },
+    { "id": "no-entry", "label": "No-entry sign" },
+    { "id": "road-narrowing", "label": "Road narrowing" },
+    { "id": "road-awareness", "label": "Road awareness" }
+  ]
+}

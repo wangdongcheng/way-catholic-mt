@@ -39,6 +39,32 @@ function messageText(message) {
     : message?.message || "";
 }
 
+function routeNavigationFields(route) {
+  const navigation = route.navigation;
+
+  return `
+    <section class="form-section">
+      <h3>Route checkpoint defaults</h3>
+      <div class="form-grid">
+        <label class="correct-control">
+          <input type="checkbox" data-route-field="eventsAreCheckpoints"
+            ${navigation.eventsAreCheckpoints ? "checked" : ""} />
+          Events are checkpoints
+        </label>
+        ${inputField(
+          "Default missed-event penalty",
+          "route-default-penalty",
+          navigation.defaultPenaltyOnMiss ?? 0,
+          { type: "number", min: 0 }
+        ).replace(
+          'data-field="route-default-penalty"',
+          'data-route-field="defaultPenaltyOnMiss"'
+        )}
+      </div>
+    </section>
+  `;
+}
+
 function commonFields(event) {
   return `
     <section class="form-section">
@@ -61,6 +87,29 @@ function commonFields(event) {
   `;
 }
 
+function checkpointFields(event, route) {
+  const defaultPenalty = route.navigation.defaultPenaltyOnMiss;
+
+  return `
+    <section class="form-section">
+      <h3>Route checkpoint</h3>
+      <div class="form-grid">
+        <label class="correct-control">
+          <input type="checkbox" data-field="required"
+            ${event.required ? "checked" : ""} />
+          Required event
+        </label>
+        ${inputField(
+          `Penalty on miss (route default: ${defaultPenalty})`,
+          "penaltyOnMiss",
+          event.penaltyOnMiss,
+          { type: "number", min: 0 }
+        )}
+      </div>
+    </section>
+  `;
+}
+
 function routeMessageFields(event) {
   return `
     <section class="form-section">
@@ -75,6 +124,153 @@ function routeMessageFields(event) {
             <option value="high" ${event.priority === "high" ? "selected" : ""}>High</option>
           </select>
         </label>
+      </div>
+    </section>
+  `;
+}
+
+const OBSERVATION_TYPES = [
+  ["stop-line", "Stop line"],
+  ["stop-sign", "Stop sign"],
+  ["speed-limit", "Speed limit"],
+  ["one-way", "One-way sign"],
+  ["pedestrian-crossing", "Pedestrian crossing"],
+  ["no-entry", "No-entry sign"],
+  ["road-narrowing", "Road narrowing"],
+  ["road-awareness", "Road awareness"],
+];
+
+function observationFields(event) {
+  return `
+    <section class="form-section">
+      <h3>Observation behavior</h3>
+      <div class="form-grid">
+        <label class="correct-control">
+          <input type="checkbox" data-field="enabled"
+            ${event.enabled !== false ? "checked" : ""} />
+          Enabled
+        </label>
+        <label class="correct-control">
+          <input type="checkbox" data-field="examEnabled"
+            ${event.examEnabled !== false ? "checked" : ""} />
+          Check during exam
+        </label>
+        <label class="form-field full-width">
+          <span>Observation type</span>
+          <select data-field="observationType">
+            ${OBSERVATION_TYPES.map(([value, label]) => `
+              <option value="${value}"
+                ${event.observationType === value ? "selected" : ""}>${label}</option>
+            `).join("")}
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <h3>Practice message</h3>
+      <div class="form-grid">
+        ${textareaField(
+          "Message",
+          "practiceMessageText",
+          messageText(event.practiceMessage)
+        )}
+      </div>
+    </section>
+
+    ${event.examEnabled === false ? "" : `
+      <section class="form-section">
+        <h3>Exam check</h3>
+        <div class="form-grid">
+          ${inputField("Answer radius (m)", "answerRadius", event.answerRadius, { type: "number", min: 1 })}
+          ${inputField("Penalty on miss", "penaltyOnMiss", event.penaltyOnMiss ?? 0, { type: "number", min: 0 })}
+          ${inputField("Penalty on incorrect", "penaltyOnIncorrect", event.penaltyOnIncorrect ?? 0, { type: "number", min: 0 })}
+        </div>
+      </section>
+    `}
+  `;
+}
+
+function criticalInput(label, field, value, options = {}) {
+  return inputField(label, field, value, options).replace(
+    `data-field="${field}"`,
+    `data-critical-field="${field}"`
+  );
+}
+
+function criticalTextarea(label, field, value) {
+  return textareaField(label, field, value).replace(
+    `data-field="${field}"`,
+    `data-critical-field="${field}"`
+  );
+}
+
+function criticalViolationFields(event) {
+  const trigger = event.triggerCheckpoint || {};
+  const triggerLocation = trigger.location || {};
+  const forbidden = event.forbiddenDestination || {};
+  const forbiddenLocation = forbidden.location || {};
+
+  return `
+    <section class="form-section">
+      <h3>Critical violation</h3>
+      <div class="form-grid">
+        <label class="correct-control">
+          <input type="checkbox" data-critical-field="enabled"
+            ${event.enabled !== false ? "checked" : ""} />
+          Enabled
+        </label>
+        <label class="correct-control">
+          <input type="checkbox" data-critical-field="oncePerSession"
+            ${event.oncePerSession !== false ? "checked" : ""} />
+          Once per session
+        </label>
+        ${criticalInput("Rule", "rule", event.rule || "wrong-way-entry")}
+        ${criticalInput(
+          "Detection window (seconds)",
+          "windowSeconds",
+          (Number(event.windowMs) || 60000) / 1000,
+          { type: "number", min: 1 }
+        )}
+      </div>
+    </section>
+
+    <section class="form-section">
+      <h3>Trigger checkpoint A</h3>
+      <div class="form-grid">
+        ${criticalInput("Latitude", "triggerLat", triggerLocation.lat, { type: "number", step: "any" })}
+        ${criticalInput("Longitude", "triggerLng", triggerLocation.lng, { type: "number", step: "any" })}
+        ${criticalInput("Radius (m)", "triggerRadius", trigger.radius, { type: "number", min: 1 })}
+        ${criticalInput("Pano ID (optional)", "triggerPano", trigger.pano || "")}
+      </div>
+    </section>
+
+    <section class="form-section">
+      <h3>Forbidden destination B</h3>
+      <div class="form-grid">
+        ${criticalInput("Latitude", "forbiddenLat", forbiddenLocation.lat, { type: "number", step: "any" })}
+        ${criticalInput("Longitude", "forbiddenLng", forbiddenLocation.lng, { type: "number", step: "any" })}
+        ${criticalInput("Radius (m)", "forbiddenRadius", forbidden.radius, { type: "number", min: 1 })}
+        ${criticalInput("Pano ID (optional)", "forbiddenPano", forbidden.pano || "")}
+      </div>
+      <p class="form-help">Drag either map marker to adjust the two points.</p>
+    </section>
+
+    <section class="form-section">
+      <h3>Practice warning</h3>
+      <div class="form-grid">
+        ${criticalInput("Title", "practiceTitle", event.practiceWarning?.title || "")}
+        ${criticalInput("Button label", "practiceButtonLabel", event.practiceWarning?.buttonLabel || "")}
+        ${criticalTextarea("Message", "practiceMessage", event.practiceWarning?.message || "")}
+      </div>
+    </section>
+
+    <section class="form-section">
+      <h3>Exam failure</h3>
+      <div class="form-grid">
+        ${criticalInput("Title", "examTitle", event.examFailure?.title || "")}
+        ${criticalInput("Reason code", "reasonCode", event.examFailure?.reasonCode || "")}
+        ${criticalTextarea("Message", "examMessage", event.examFailure?.message || "")}
       </div>
     </section>
   `;
@@ -246,11 +442,21 @@ export function createEventForm({ container, title, store }) {
       return;
     }
 
+    const documentType = state.route.type;
+    const isObservation = documentType === "observation-checks";
+    const isCritical = documentType === "critical-violations";
+
     container.innerHTML = `
-      ${commonFields(event)}
-      ${event.type === "route-message"
-        ? routeMessageFields(event)
-        : commandFields(event)}
+      ${isObservation || isCritical ? "" : routeNavigationFields(state.route)}
+      ${isCritical ? criticalViolationFields(event) : commonFields(event)}
+      ${isObservation || isCritical ? "" : checkpointFields(event, state.route)}
+      ${isObservation
+        ? observationFields(event)
+        : isCritical
+          ? ""
+          : event.type === "route-message"
+            ? routeMessageFields(event)
+            : commandFields(event)}
       <section class="form-section danger-zone">
         <button class="button danger" type="button" data-action="delete-event">
           Delete event
@@ -263,8 +469,59 @@ export function createEventForm({ container, title, store }) {
     if (!currentEventId) return;
 
     const target = domEvent.target;
+    const routeField = target.dataset.routeField;
     const field = target.dataset.field;
+    const criticalField = target.dataset.criticalField;
     const optionIndex = Number(target.dataset.optionIndex);
+
+    if (routeField) {
+      const route = store.getState().route;
+      const navigation = {
+        ...(route.navigation || {}),
+      };
+
+      navigation[routeField] = routeField === "eventsAreCheckpoints"
+        ? target.checked
+        : Number(target.value);
+      store.updateRoute({ navigation });
+      return;
+    }
+
+    if (criticalField) {
+      store.mutateEvent(currentEventId, (event) => {
+        event.triggerCheckpoint ||= { location: {} };
+        event.triggerCheckpoint.location ||= {};
+        event.forbiddenDestination ||= { location: {} };
+        event.forbiddenDestination.location ||= {};
+        event.practiceWarning ||= {};
+        event.examFailure ||= {};
+
+        const numericValue = Number(target.value);
+        const setters = {
+          triggerLat: () => { event.triggerCheckpoint.location.lat = numericValue; },
+          triggerLng: () => { event.triggerCheckpoint.location.lng = numericValue; },
+          triggerRadius: () => { event.triggerCheckpoint.radius = numericValue; },
+          triggerPano: () => { event.triggerCheckpoint.pano = target.value || null; },
+          forbiddenLat: () => { event.forbiddenDestination.location.lat = numericValue; },
+          forbiddenLng: () => { event.forbiddenDestination.location.lng = numericValue; },
+          forbiddenRadius: () => { event.forbiddenDestination.radius = numericValue; },
+          forbiddenPano: () => { event.forbiddenDestination.pano = target.value || null; },
+          windowSeconds: () => { event.windowMs = numericValue * 1000; },
+          practiceTitle: () => { event.practiceWarning.title = target.value; },
+          practiceMessage: () => { event.practiceWarning.message = target.value; },
+          practiceButtonLabel: () => { event.practiceWarning.buttonLabel = target.value; },
+          examTitle: () => { event.examFailure.title = target.value; },
+          examMessage: () => { event.examFailure.message = target.value; },
+          reasonCode: () => { event.examFailure.reasonCode = target.value; },
+          rule: () => { event.rule = target.value; },
+          enabled: () => { event.enabled = target.checked; },
+          oncePerSession: () => { event.oncePerSession = target.checked; },
+        };
+
+        setters[criticalField]?.();
+      });
+      return;
+    }
     const optionField = target.dataset.optionField;
 
     if (field) {
@@ -272,15 +529,20 @@ export function createEventForm({ container, title, store }) {
         const numericFields = new Set([
           "lat", "lng", "radius", "headingMin", "headingMax",
           "autoCloseMs", "answerRadius", "penaltyOnOutOfRange", "penalty",
+          "penaltyOnMiss",
+          "penaltyOnIncorrect",
         ]);
 
-        if (field === "answerMode") {
+        if (field === "required") {
+          event.required = target.checked;
+        } else if (field === "enabled" || field === "examEnabled") {
+          event[field] = target.checked;
+        } else if (field === "answerMode") {
           normalizeAnswerMode(event, target.value);
         } else if (field === "outOfRangeMessage") {
           event.outOfRangeRouteMessage = {
             ...(event.outOfRangeRouteMessage || {}),
             message: target.value,
-            autoCloseMs: 0,
             priority: "high",
           };
         } else if (field === "correctMessage" || field === "incorrectMessage") {
@@ -290,8 +552,12 @@ export function createEventForm({ container, title, store }) {
           event[key] = {
             ...(event[key] || {}),
             message: target.value,
-            autoCloseMs: field === "correctMessage" ? 5000 : 0,
             priority: "high",
+          };
+        } else if (field === "practiceMessageText") {
+          event.practiceMessage = {
+            ...(event.practiceMessage || {}),
+            message: target.value,
           };
         } else if (numericFields.has(field)) {
           if (target.value === "" && field.startsWith("heading")) {
@@ -325,7 +591,6 @@ export function createEventForm({ container, title, store }) {
           option.routeMessage = {
             ...(option.routeMessage || {}),
             message: target.value,
-            autoCloseMs: option.correct ? 5000 : 0,
             priority: "high",
           };
         } else {

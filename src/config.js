@@ -1,7 +1,29 @@
+import { normalizeRouteConfig } from "./route-normalizer.js";
+
 export const APP_CONFIG = {
   defaultRoute: "route-001",
   routeBasePath: "/data/routes",
+  observationChecksPath: "/data/observation-checks.json",
+  observationTypesPath: "/data/observation-types.json",
+  criticalViolationsPath: "/data/critical-violations.json",
 };
+
+export const AVAILABLE_ROUTES = Object.freeze([
+  { id: "route-001", name: "Demo Route 1" },
+  { id: "route-002", name: "Demo Route 2" },
+]);
+
+export const EXAM_START_NOTICE = Object.freeze({
+  title: "Before the test",
+  items: [
+    "Follow the examiner's instructions carefully.",
+    "Observe all road signs and speed limits.",
+    "Confirm relevant road observations using the on-screen buttons.",
+    "Answer examiner commands before leaving the valid area.",
+    "Leaving the valid area without answering will result in a penalty.",
+  ],
+  buttonLabel: "Start Exam",
+});
 
 function getUrlCoordinates() {
   const searchParams = new URLSearchParams(window.location.search);
@@ -38,8 +60,12 @@ export function getRequestedRouteId() {
     : APP_CONFIG.defaultRoute;
 }
 
-export async function loadRouteConfig() {
-  const routeId = getRequestedRouteId();
+export function getRequestedMode() {
+  const mode = new URLSearchParams(window.location.search).get("mode");
+  return mode === "practice" || mode === "exam" ? mode : null;
+}
+
+export async function loadRouteConfig(routeId = getRequestedRouteId()) {
   const response = await fetch(
     `${APP_CONFIG.routeBasePath}/${routeId}.json`
   );
@@ -50,7 +76,29 @@ export async function loadRouteConfig() {
     );
   }
 
+  return normalizeRouteConfig(await response.json());
+}
+
+async function loadJson(path, label) {
+  const response = await fetch(path);
+
+  if (!response.ok) {
+    throw new Error(`Failed to load ${label}: ${response.status}`);
+  }
+
   return response.json();
+}
+
+export function loadObservationChecks() {
+  return loadJson(APP_CONFIG.observationChecksPath, "observation checks");
+}
+
+export function loadObservationTypes() {
+  return loadJson(APP_CONFIG.observationTypesPath, "observation types");
+}
+
+export function loadCriticalViolations() {
+  return loadJson(APP_CONFIG.criticalViolationsPath, "critical violations");
 }
 
 export function getInitialState(route) {

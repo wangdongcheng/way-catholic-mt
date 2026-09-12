@@ -4,23 +4,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Edit route messages and examiner commands on a map." />
-  <title>Route Editor — The Way</title>
+  <meta name="description" content="Edit exam routes, observations, and critical violations on a map." />
+  <title>Route Editor — MDTS - Malta Driving Test Simulator</title>
 </head>
 
 <body>
   <main id="editor-app">
     <header class="editor-toolbar">
       <div class="brand-block">
-        <span class="eyebrow">The Way</span>
+        <span class="eyebrow">MDTS</span>
         <h1>Route Editor</h1>
       </div>
 
       <label class="toolbar-field">
-        <span>Route</span>
+        <span>Data set</span>
         <select id="route-selector">
           <option value="route-001">Demo Route 1</option>
           <option value="route-002">Demo Route 2</option>
+          <option value="observation-checks">Observation Checks</option>
+          <option value="critical-violations">Critical Violations</option>
         </select>
       </label>
 
@@ -30,6 +32,9 @@
       </label>
 
       <div class="toolbar-actions">
+        <button id="new-route-button" class="button" type="button">
+          New route
+        </button>
         <button id="add-event-button" class="button primary" type="button">
           + Add event
         </button>
@@ -44,8 +49,9 @@
         <div id="editor-map" aria-label="Route event map"></div>
 
         <div class="map-legend" aria-label="Map legend">
-          <span><i class="legend-dot message"></i>Route message</span>
+          <span><i class="legend-dot message"></i>Observation</span>
           <span><i class="legend-dot command"></i>Examiner command</span>
+          <span><i class="legend-dot critical"></i>Critical violation</span>
           <span><i class="legend-ring answer"></i>Answer range</span>
           <span><i class="legend-wedge"></i>Heading</span>
         </div>
@@ -81,10 +87,11 @@
   </main>
 
   <div id="add-event-menu" class="context-menu" hidden>
-    <button type="button" data-create-type="route-message">Route message</button>
-    <button type="button" data-create-type="single">Single-choice command</button>
-    <button type="button" data-create-type="multiple">Multiple-choice command</button>
-    <button type="button" data-create-type="sequence">Sequence command</button>
+    <button type="button" data-create-type="observation-check" data-document="observation">Observation check</button>
+    <button type="button" data-create-type="critical-violation" data-document="critical">Critical violation</button>
+    <button type="button" data-create-type="single" data-document="exam">Single-choice command</button>
+    <button type="button" data-create-type="multiple" data-document="exam">Multiple-choice command</button>
+    <button type="button" data-create-type="sequence" data-document="exam">Sequence command</button>
   </div>
 
   <dialog id="validation-dialog">
@@ -93,6 +100,31 @@
       <button id="validation-close" type="button" aria-label="Close">×</button>
     </div>
     <div id="validation-results"></div>
+  </dialog>
+
+  <dialog id="new-route-dialog">
+    <form id="new-route-form" class="new-route-form">
+      <div class="dialog-header">
+        <h2>New route</h2>
+        <button id="new-route-close" type="button" aria-label="Close">&times;</button>
+      </div>
+      <div class="new-route-fields">
+        <label class="form-field">
+          <span>Route ID</span>
+          <input id="new-route-id" name="routeId" type="text"
+            pattern="[A-Za-z0-9][A-Za-z0-9_-]*" required />
+          <span class="form-help">Used as the exported JSON filename.</span>
+        </label>
+        <label class="form-field">
+          <span>Name</span>
+          <input id="new-route-name" name="routeName" type="text" required />
+        </label>
+      </div>
+      <div class="dialog-actions">
+        <button id="new-route-cancel" class="button" type="button">Cancel</button>
+        <button class="button primary" type="submit">Create route</button>
+      </div>
+    </form>
   </dialog>
 
   <div id="toast" role="status" aria-live="polite" hidden></div>

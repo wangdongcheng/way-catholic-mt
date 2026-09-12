@@ -1,11 +1,20 @@
 import "./style.css";
 
 import {
+  AVAILABLE_ROUTES,
   getInitialState,
+  getRequestedMode,
+  getRequestedRouteId,
+  loadCriticalViolations,
+  loadObservationChecks,
+  loadObservationTypes,
   loadRouteConfig,
+  EXAM_START_NOTICE
 } from "./config.js";
-import { EXAM_START_NOTICE } from "./exam-config.js";
+
 import { createEventEngine } from "./event-engine.js";
+import { createObservationEngine } from "./observation-engine.js";
+import { createCriticalViolationEngine } from "./critical-violation-engine.js";
 import {
   createStreetView,
   restartStreetView,
@@ -13,17 +22,28 @@ import {
 } from "./streetview.js";
 import {
   bindUiActions,
+  clearExaminerFeedback,
   clearRouteMessages,
+  EVENT_MESSAGE_AUTO_CLOSE_MS,
   getExaminerSelection,
   hideCurrentInfo,
+  hideExamFailure,
   hideExaminerCommand,
   hideExamStart,
+  hideModeSelection,
+  hideObservationToolbar,
   scheduleLocationUpdate,
   setLocationUpdatesEnabled,
   showExaminerCommand,
+  showExaminerFeedback,
+  showExamFailure,
   showExamStart,
   showInfoTemporarily,
+  showModeSelection,
+  showObservationToolbar,
   showRouteMessage,
+  setObservationToolbarVisible,
+  updateCurrentEventInfo,
   updatePanoramaInfo,
   updatePenaltyScore,
   updateRouteName,
@@ -35,7 +55,31 @@ let commandQueue = [];
 let results = [];
 let totalPenalty = 0;
 let panorama = null;
-let examStarted = false;
+let driveStarted = false;
+const currentEventDebug = {
+  examinerCommands: [],
+  observations: [],
+  criticalViolations: [],
+};
+
+function updateEventDebug(kind, events) {
+  currentEventDebug[kind] = events;
+  updateCurrentEventInfo(currentEventDebug);
+}
+
+function syncExaminerEventDebug() {
+  const events = [];
+
+  if (activeCommand) {
+    events.push({ id: activeCommand.event.id, status: "active" });
+  }
+
+  events.push(...commandQueue.map(({ event }) => ({
+    id: event.id,
+    status: "queued",
+  })));
+  updateEventDebug("examinerCommands", events);
+}
 
 function getEventPenalty(event, selectedIds, isCorrect) {
   if (isCorrect) {
@@ -103,6 +147,7 @@ function recordResult(result) {
 
 function showNextCommand() {
   if (activeCommand || !panorama) {
+    syncExaminerEventDebug();
     return;
   }
 
@@ -126,8 +171,11 @@ function showNextCommand() {
     showExaminerCommand(next.event, {
       onSubmit: completeActiveCommand,
     });
+    syncExaminerEventDebug();
     return;
   }
+
+  syncExaminerEventDebug();
 }
 
 function completeActiveCommand(selectedIds) {
@@ -158,7 +206,7 @@ function completeActiveCommand(selectedIds) {
   hideExaminerCommand();
 
   if (message) {
-    showRouteMessage(message);
+    showExaminerFeedback(message, correct ? "correct" : "incorrect");
   }
 
   showNextCommand();
@@ -187,12 +235,11 @@ function expireActiveCommand(distance) {
   activeCommand = null;
   hideExaminerCommand();
 
-  showRouteMessage(
+  showExaminerFeedback(
     event.outOfRangeRouteMessage || {
       message: `No answer was recorded. ${penalty} point deducted.`,
-      autoCloseMs: 0,
-      priority: "high",
-    }
+    },
+    "out-of-range"
   );
 
   showNextCommand();
@@ -236,36 +283,153 @@ function handleRouteEvent(event, targetPosition) {
 }
 
 async function initApp() {
-  const route = await loadRouteConfig();
-  const initialState = getInitialState(route);
+  const mode = getRequestedMode();
+  const requestedRouteId = getRequestedRouteId();
+  const [route, observationDocument, observationTypes, criticalDocument] =
+    await Promise.all([
+      loadRouteConfig(requestedRouteId),
+      loadObservationChecks(),
+      loadObservationTypes(),
+      loadCriticalViolations(),
+    ]);
+  const initialState = getInitialState(
+    mode === "practice" ? observationDocument : route
+  );
   const streetView = await createStreetView(initialState);
 
   panorama = streetView.panorama;
-  updateRouteName(route.name);
+  document.body.dataset.mode = mode || "selection";
+  updateRouteName(mode === "practice" ? "Practice" : route.name);
   updatePenaltyScore(0);
   setLocationUpdatesEnabled(false);
   setStreetViewLocked(panorama, true);
 
+  const { navigation } = route;
   const eventEngine = createEventEngine({
-    events: route.events || [],
+    events: mode === "exam" ? route.events || [] : [],
     streetViewService: streetView.streetViewService,
     panorama,
-    onEvent: handleRouteEvent,
+    onEvent: mode === "practice"
+      ? (event) => showRouteMessage(event)
+      : handleRouteEvent,
+    onMissedEvent: (event, { penalty, skippedByEventId }) => {
+      if (mode !== "exam") {
+        return;
+      }
+
+      recordResult({
+        eventId: event.id,
+        status: "missed",
+        penalty,
+        skippedByEventId,
+        answeredAt: null,
+      });
+
+      const message = event.missedRouteMessage ||
+        navigation.missedRouteMessage || {
+          message: penalty > 0
+            ? `Route point missed. ${penalty} point deducted.`
+            : "Route point missed.",
+          autoCloseMs: 0,
+          priority: "high",
+        };
+
+      showRouteMessage(message);
+    },
+  });
+  const observationEngine = createObservationEngine({
+    document: observationDocument,
+    mode,
+    streetViewService: streetView.streetViewService,
+    panorama,
+    onPracticeMessage: (message) => showRouteMessage(message, {
+      modal: false,
+      autoCloseMs: EVENT_MESSAGE_AUTO_CLOSE_MS,
+    }),
+    onAcknowledged: (event) => {
+      recordResult({
+        eventId: event.id,
+        status: "observation-acknowledged",
+        correct: true,
+        penalty: 0,
+        answeredAt: Date.now(),
+      });
+      showExaminerFeedback(
+        "Observation recorded correctly.",
+        "correct"
+      );
+    },
+    onMissed: (event, { distance, penalty }) => {
+      recordResult({
+        eventId: event.id,
+        status: "observation-missed",
+        correct: false,
+        penalty,
+        distanceFromTarget: Number(distance.toFixed(1)),
+        answeredAt: null,
+      });
+      showExaminerFeedback(
+        "A required observation was missed.",
+        "missed"
+      );
+    },
+    onIncorrect: ({ observationType, activeEventIds, penalty }) => {
+      recordResult({
+        eventId: activeEventIds[0] || null,
+        status: "observation-incorrect",
+        observationType,
+        activeEventIds,
+        correct: false,
+        penalty,
+        answeredAt: Date.now(),
+      });
+      showExaminerFeedback(
+        "That observation did not match.",
+        "not-that-one"
+      );
+    },
+    onVisibilityChange: ({ hasVisible }) => {
+      setObservationToolbarVisible(hasVisible);
+    },
+    onDebugStateChange: (events) => {
+      updateEventDebug("observations", events);
+    },
+  });
+  const criticalViolationEngine = createCriticalViolationEngine({
+    document: criticalDocument,
+    mode,
+    panorama,
+    onViolation: handleCriticalViolation,
+    onDebugStateChange: (events) => {
+      updateEventDebug("criticalViolations", events);
+    },
   });
   let eventEngineInitialized = false;
+  let observationEngineInitialized = false;
 
-  const startExam = async () => {
-    if (examStarted) {
+  const startDrive = async () => {
+    if (driveStarted) {
       return;
     }
 
-    examStarted = true;
+    driveStarted = true;
     setLocationUpdatesEnabled(true);
     setStreetViewLocked(panorama, false);
+    hideModeSelection();
     hideExamStart();
     updatePanoramaInfo(panorama);
     scheduleLocationUpdate(panorama, streetView.geocoder);
     showInfoTemporarily();
+
+    if (mode === "exam") {
+      showObservationToolbar(observationTypes.types, {
+        onSelect: (observationType) =>
+          observationEngine.acknowledge(observationType),
+      });
+      setObservationToolbarVisible(false);
+    } else {
+      hideObservationToolbar();
+    }
 
     if (!eventEngineInitialized) {
       eventEngineInitialized = true;
@@ -273,20 +437,140 @@ async function initApp() {
     } else {
       eventEngine.refreshAndCheck();
     }
+
+    if (!observationEngineInitialized) {
+      observationEngineInitialized = true;
+      await observationEngine.initialize();
+    } else {
+      observationEngine.checkNearbyEvents();
+    }
+
+    criticalViolationEngine.check();
+  };
+
+  const startExam = async () => {
+    await startDrive();
   };
 
   const prepareExam = () => {
-    examStarted = false;
+    driveStarted = false;
     setLocationUpdatesEnabled(false);
     setStreetViewLocked(panorama, true);
     hideCurrentInfo();
+    hideObservationToolbar();
     showExamStart(EXAM_START_NOTICE, {
       onStart: startExam,
+      routeName: route.name,
     });
   };
 
+  const navigateToMode = (nextMode, routeId = null) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("mode", nextMode);
+
+    if (nextMode === "exam" && routeId) {
+      url.searchParams.set("route", routeId);
+    } else {
+      url.searchParams.delete("route");
+    }
+
+    window.location.assign(url);
+  };
+
+  const selectExamRoute = (selection) => {
+    const routeId = selection === "random"
+      ? AVAILABLE_ROUTES[
+          Math.floor(Math.random() * AVAILABLE_ROUTES.length)
+        ].id
+      : selection;
+    navigateToMode("exam", routeId);
+  };
+
+  const showModeChooser = () => {
+    showModeSelection(AVAILABLE_ROUTES, {
+      selectedRouteId: requestedRouteId,
+      onPractice: () => navigateToMode("practice"),
+      onExam: selectExamRoute,
+    });
+  };
+
+  const resetToModeChooser = () => {
+    driveStarted = false;
+    setLocationUpdatesEnabled(false);
+    activeCommand = null;
+    commandQueue = [];
+    syncExaminerEventDebug();
+    results = [];
+    totalPenalty = 0;
+    eventEngine.reset();
+    observationEngine.reset();
+    criticalViolationEngine.reset();
+    hideExaminerCommand();
+    hideExamStart();
+    hideExamFailure();
+    hideObservationToolbar();
+    clearExaminerFeedback();
+    clearRouteMessages();
+    hideCurrentInfo();
+    updatePenaltyScore(0);
+    setStreetViewLocked(panorama, true);
+    restartStreetView(panorama, initialState);
+    document.body.dataset.mode = "selection";
+    showModeChooser();
+  };
+
+  function handleCriticalViolation(event, details) {
+    results.push({
+      eventId: event.id,
+      status: mode === "exam" ? "failed" : "practice-warning",
+      reason: event.examFailure?.reasonCode || event.rule,
+      penalty: 0,
+      ...details,
+    });
+
+    if (mode === "practice") {
+      driveStarted = false;
+      setLocationUpdatesEnabled(false);
+      clearRouteMessages();
+      hideCurrentInfo();
+      setStreetViewLocked(panorama, true);
+      showExamFailure({
+        ...(event.practiceWarning || {}),
+        message: event.practiceWarning?.message ||
+          "A serious driving error was detected.",
+      }, {
+        onContinue: () => {
+          hideExamFailure();
+          driveStarted = true;
+          setLocationUpdatesEnabled(true);
+          setStreetViewLocked(panorama, false);
+          updatePanoramaInfo(panorama);
+          scheduleLocationUpdate(panorama, streetView.geocoder);
+          showInfoTemporarily();
+        },
+        onRestart: resetToModeChooser,
+      });
+      return;
+    }
+
+    driveStarted = false;
+    setLocationUpdatesEnabled(false);
+    activeCommand = null;
+    commandQueue = [];
+    hideExaminerCommand();
+    hideObservationToolbar();
+    clearExaminerFeedback();
+    clearRouteMessages();
+    hideCurrentInfo();
+    setStreetViewLocked(panorama, true);
+    document.body.dataset.mode = "failed";
+    showExamFailure(event.examFailure, {
+      onRestart: resetToModeChooser,
+    });
+  }
+
   panorama.addListener("position_changed", () => {
-    if (!examStarted) {
+    if (!driveStarted) {
       return;
     }
 
@@ -294,21 +578,25 @@ async function initApp() {
     scheduleLocationUpdate(panorama, streetView.geocoder);
     showInfoTemporarily();
     eventEngine.refreshAndCheck();
+    observationEngine.checkNearbyEvents();
+    criticalViolationEngine.check();
     checkActiveCommandRange();
   });
 
   panorama.addListener("pano_changed", () => {
-    if (!examStarted) {
+    if (!driveStarted) {
       return;
     }
 
     updatePanoramaInfo(panorama);
     showInfoTemporarily();
     eventEngine.checkNearbyEvents();
+    observationEngine.checkNearbyEvents();
+    criticalViolationEngine.check();
   });
 
   panorama.addListener("pov_changed", () => {
-    if (!examStarted) {
+    if (!driveStarted) {
       return;
     }
 
@@ -318,23 +606,16 @@ async function initApp() {
   });
 
   bindUiActions({
-    onRestart: () => {
-      examStarted = false;
-      setLocationUpdatesEnabled(false);
-      activeCommand = null;
-      commandQueue = [];
-      results = [];
-      totalPenalty = 0;
-      eventEngine.reset();
-      hideExaminerCommand();
-      clearRouteMessages();
-      updatePenaltyScore(0);
-      restartStreetView(panorama, initialState);
-      prepareExam();
-    },
+    onRestart: resetToModeChooser,
   });
 
-  prepareExam();
+  if (mode === "exam") {
+    prepareExam();
+  } else if (mode === "practice") {
+    await startDrive();
+  } else {
+    showModeChooser();
+  }
 }
 
 initApp().catch((error) => {

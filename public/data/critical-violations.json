@@ -1,0 +1,48 @@
+{
+  "id": "critical-violations",
+  "type": "critical-violations",
+  "name": "Critical Violations",
+  "defaults": {
+    "triggerRadius": 15,
+    "violationRadius": 15,
+    "windowMs": 60000,
+    "oncePerSession": true
+  },
+  "events": [
+    {
+      "id": "critical-violation-001",
+      "type": "critical-violation",
+      "rule": "wrong-way-entry",
+      "enabled": true,
+      "oncePerSession": true,
+      "triggerCheckpoint": {
+        "location": {
+          "lat": 35.8884924,
+          "lng": 14.5032812
+        },
+        "radius": 30,
+        "pano": null
+      },
+      "forbiddenDestination": {
+        "location": {
+          "lat": 35.8890271,
+          "lng": 14.5029594
+        },
+        "radius": 7,
+        "pano": null
+      },
+      "windowMs": 30000,
+      "practiceWarning": {
+        "title": "Serious driving error",
+        "message": "NO ENTRY!",
+        "buttonLabel": "I understand",
+        "autoCloseMs": 0
+      },
+      "examFailure": {
+        "title": "Test failed",
+        "message": "A critical driving violation was detected.",
+        "reasonCode": "CRITICAL_VIOLATION"
+      }
+    }
+  ]
+}

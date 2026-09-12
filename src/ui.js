@@ -3,16 +3,27 @@ import {
   saveLocationToCache,
 } from "./location-cache.js";
 
+const currentInfoEnabled =
+  new URLSearchParams(window.location.search).get("currentinfo") === "1";
+
+export const EVENT_MESSAGE_AUTO_CLOSE_MS = 10000;
+
 let infoHideTimer = null;
 let locationLookupTimer = null;
 let routeMessageTimer = null;
 let routeMessageActive = false;
 let routeMessageQueue = [];
+const examinerFeedbackTimers = new Set();
 let examinerState = null;
 let locationUpdatesEnabled = true;
 
 export function showInfoTemporarily() {
   const info = document.getElementById("current-info");
+
+  if (!currentInfoEnabled) {
+    hideCurrentInfo();
+    return;
+  }
 
   if (!info) {
     return;
@@ -64,11 +75,105 @@ export function updateRouteName(name) {
   }
 }
 
+function formatCurrentEvents(events) {
+  if (!events?.length) {
+    return "-";
+  }
+
+  return events.map(({ id, status, remainingMs }) => {
+    const remaining = Number.isFinite(remainingMs)
+      ? `, ${Math.ceil(remainingMs / 1000)}s remaining`
+      : "";
+
+    return `${id} [${status}${remaining}]`;
+  }).join(", ");
+}
+
+export function updateCurrentEventInfo({
+  examinerCommands = [],
+  observations = [],
+  criticalViolations = [],
+}) {
+  const values = [
+    ["current-examiner-events", examinerCommands],
+    ["current-observation-events", observations],
+    ["current-critical-events", criticalViolations],
+  ];
+
+  for (const [elementId, events] of values) {
+    const element = document.getElementById(elementId);
+
+    if (element) {
+      element.textContent = formatCurrentEvents(events);
+    }
+  }
+}
+
 export function updatePenaltyScore(penalty) {
   const element = document.getElementById("penalty-score");
 
   if (element) {
     element.textContent = String(penalty);
+  }
+}
+
+export function showModeSelection(routes, {
+  selectedRouteId,
+  onPractice,
+  onExam,
+}) {
+  const dialog = document.getElementById("mode-dialog");
+  const choice = document.getElementById("mode-choice");
+  const routeChoice = document.getElementById("exam-route-choice");
+  const routeSelect = document.getElementById("exam-route-select");
+
+  if (!(dialog instanceof HTMLDialogElement) || !routeSelect) {
+    return;
+  }
+
+  routeSelect.replaceChildren();
+  const randomOption = document.createElement("option");
+  randomOption.value = "random";
+  randomOption.textContent = "Random route";
+  routeSelect.appendChild(randomOption);
+
+  for (const route of routes) {
+    const option = document.createElement("option");
+    option.value = route.id;
+    option.textContent = route.name;
+    option.selected = route.id === selectedRouteId;
+    routeSelect.appendChild(option);
+  }
+
+  choice.hidden = false;
+  routeChoice.hidden = true;
+  document.getElementById("practice-mode-button").onclick = onPractice;
+  document.getElementById("exam-mode-button").onclick = () => {
+    choice.hidden = true;
+    routeChoice.hidden = false;
+    routeSelect.focus();
+  };
+  document.getElementById("exam-route-back").onclick = () => {
+    routeChoice.hidden = true;
+    choice.hidden = false;
+    document.getElementById("exam-mode-button").focus();
+  };
+  document.getElementById("exam-route-continue").onclick = () => {
+    onExam(routeSelect.value);
+  };
+
+  if (!dialog.open) {
+    dialog.showModal();
+  }
+
+  document.getElementById("practice-mode-button").focus();
+}
+
+export function hideModeSelection() {
+  const dialog = document.getElementById("mode-dialog");
+
+  if (dialog instanceof HTMLDialogElement && dialog.open) {
+    dialog.close();
   }
 }
 
@@ -175,7 +280,7 @@ export function setLocationUpdatesEnabled(enabled) {
 export function scheduleLocationUpdate(panorama, geocoder) {
   clearTimeout(locationLookupTimer);
 
-  if (!locationUpdatesEnabled) {
+  if (!locationUpdatesEnabled || !currentInfoEnabled) {
     return;
   }
 
@@ -184,11 +289,12 @@ export function scheduleLocationUpdate(panorama, geocoder) {
   }, 300);
 }
 
-export function showExamStart(startNotice, { onStart }) {
+export function showExamStart(startNotice, { onStart, routeName }) {
   const dialog = document.getElementById("exam-start-dialog");
   const title = document.getElementById("exam-start-title");
   const items = document.getElementById("exam-start-items");
   const button = document.getElementById("exam-start-button");
+  const route = document.getElementById("exam-start-route");
 
   if (
     !(dialog instanceof HTMLDialogElement) ||
@@ -209,6 +315,9 @@ export function showExamStart(startNotice, { onStart }) {
       ];
 
   title.textContent = notice.title || "Before the test";
+  if (route) {
+    route.textContent = routeName ? `Route: ${routeName}` : "";
+  }
   items.replaceChildren();
 
   for (const item of noticeItems) {
@@ -245,21 +354,34 @@ export function hideExamStart() {
   }
 }
 
-function normalizeRouteMessage(input) {
+function normalizeRouteMessage(input, options = {}) {
+  const modal = options.modal !== false;
+  const autoCloseMsOverride = Number.isFinite(options.autoCloseMs)
+    ? options.autoCloseMs
+    : null;
+
   if (typeof input === "string") {
     return {
       message: input,
-      autoCloseMs: 0,
+      title: "",
+      buttonLabel: "OK",
+      autoCloseMs: autoCloseMsOverride ?? 0,
       priority: "normal",
+      modal,
     };
   }
 
   return {
     message: input?.message || "",
-    autoCloseMs: Number.isFinite(input?.autoCloseMs)
-      ? input.autoCloseMs
-      : 0,
+    title: input?.title || "",
+    buttonLabel: input?.buttonLabel || "OK",
+    autoCloseMs: autoCloseMsOverride ?? (
+      Number.isFinite(input?.autoCloseMs)
+        ? input.autoCloseMs
+        : 0
+    ),
     priority: input?.priority || "normal",
+    modal,
   };
 }
 
@@ -270,6 +392,8 @@ function displayNextRouteMessage() {
 
   const dialog = document.getElementById("route-message");
   const textElement = document.getElementById("route-message-text");
+  const titleElement = document.getElementById("route-message-title");
+  const button = document.getElementById("route-message-ok");
 
   if (!(dialog instanceof HTMLDialogElement) || !textElement) {
     return;
@@ -278,8 +402,23 @@ function displayNextRouteMessage() {
   const next = routeMessageQueue.shift();
   routeMessageActive = true;
   textElement.textContent = next.message;
-  dialog.showModal();
-  document.getElementById("route-message-ok")?.focus();
+  if (titleElement) {
+    titleElement.textContent = next.title;
+    titleElement.hidden = !next.title;
+  }
+  if (button) button.textContent = next.buttonLabel;
+  dialog.dataset.priority = next.priority;
+  dialog.dataset.modal = String(next.modal);
+
+  if (next.modal) {
+    dialog.showModal();
+  } else {
+    dialog.show();
+  }
+
+  if (next.modal) {
+    document.getElementById("route-message-ok")?.focus();
+  }
 
   clearTimeout(routeMessageTimer);
   if (next.autoCloseMs > 0) {
@@ -287,8 +426,8 @@ function displayNextRouteMessage() {
   }
 }
 
-export function showRouteMessage(message) {
-  const normalized = normalizeRouteMessage(message);
+export function showRouteMessage(message, options = {}) {
+  const normalized = normalizeRouteMessage(message, options);
 
   if (!normalized.message) {
     return;
@@ -327,6 +466,58 @@ export function closeCurrentRouteMessage() {
 export function clearRouteMessages() {
   routeMessageQueue = [];
   closeCurrentRouteMessage();
+}
+
+function scheduleExaminerFeedback(callback, delay) {
+  const timer = setTimeout(() => {
+    examinerFeedbackTimers.delete(timer);
+    callback();
+  }, delay);
+
+  examinerFeedbackTimers.add(timer);
+}
+
+export function showExaminerFeedback(input, status) {
+  const board = document.getElementById("examiner-feedback-board");
+  const message = typeof input === "string" ? input : input?.message;
+
+  if (!board || !message) {
+    return;
+  }
+
+  const labels = {
+    correct: "Correct",
+    incorrect: "Incorrect",
+    missed: "Missed",
+    "not-that-one": "Not that one",
+    "out-of-range": "No answer recorded",
+  };
+  const item = document.createElement("article");
+  const title = document.createElement("strong");
+  const text = document.createElement("span");
+
+  item.className = "examiner-feedback-item";
+  item.dataset.status = status;
+  title.className = "examiner-feedback-title";
+  title.textContent = input?.title || labels[status] || "Examiner";
+  text.className = "examiner-feedback-message";
+  text.textContent = message;
+  item.append(title, text);
+  board.prepend(item);
+
+  scheduleExaminerFeedback(() => {
+    item.classList.add("leaving");
+    scheduleExaminerFeedback(() => item.remove(), 180);
+  }, EVENT_MESSAGE_AUTO_CLOSE_MS);
+}
+
+export function clearExaminerFeedback() {
+  for (const timer of examinerFeedbackTimers) {
+    clearTimeout(timer);
+  }
+
+  examinerFeedbackTimers.clear();
+  document.getElementById("examiner-feedback-board")?.replaceChildren();
 }
 
 function updateExaminerControls() {
@@ -454,9 +645,102 @@ export function getExaminerSelection() {
     : [];
 }
 
+export function showObservationToolbar(types, { onSelect }) {
+  const toolbar = document.getElementById("observation-toolbar");
+  const buttons = document.getElementById("observation-buttons");
+
+  if (!toolbar || !buttons) {
+    return;
+  }
+
+  buttons.replaceChildren();
+
+  for (const type of types || []) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "observation-button";
+    button.dataset.observationType = type.id;
+    button.textContent = type.label;
+    button.addEventListener("click", () => {
+      const acknowledgedEventIds = onSelect(type.id) || [];
+
+      if (acknowledgedEventIds.length === 0) {
+        return;
+      }
+
+      button.classList.remove("recorded");
+      void button.offsetWidth;
+      button.classList.add("recorded");
+      setTimeout(() => button.classList.remove("recorded"), 650);
+    });
+    buttons.appendChild(button);
+  }
+
+  toolbar.hidden = false;
+}
+
+export function hideObservationToolbar() {
+  setObservationToolbarVisible(false);
+}
+
+export function setObservationToolbarVisible(visible) {
+  const toolbar = document.getElementById("observation-toolbar");
+
+  if (toolbar) {
+    toolbar.hidden = !visible;
+  }
+}
+
+export function showExamFailure(failure, { onRestart, onContinue = null }) {
+  const dialog = document.getElementById("exam-failure-dialog");
+  const eyebrow = document.getElementById("exam-failure-eyebrow");
+  const title = document.getElementById("exam-failure-title");
+  const message = document.getElementById("exam-failure-message");
+  const reason = document.getElementById("exam-failure-reason");
+  const continueButton = document.getElementById("practice-continue");
+  const restart = document.getElementById("exam-failure-restart");
+
+  if (!(dialog instanceof HTMLDialogElement)) {
+    return;
+  }
+
+  eyebrow.textContent = onContinue ? "Practice" : "Driving Test";
+  title.textContent = failure?.title || "Test failed";
+  message.textContent = failure?.message || "A critical driving violation was detected.";
+  reason.textContent = failure?.reasonCode
+    ? `Reason: ${failure.reasonCode}`
+    : "";
+  continueButton.hidden = !onContinue;
+  continueButton.onclick = onContinue;
+  restart.onclick = onRestart;
+
+  if (!dialog.open) dialog.showModal();
+  (onContinue ? continueButton : restart).focus();
+}
+
+export function hideExamFailure() {
+  const dialog = document.getElementById("exam-failure-dialog");
+  if (dialog instanceof HTMLDialogElement && dialog.open) dialog.close();
+}
+
 export function bindUiActions({ onRestart }) {
+  const restartDialog = document.getElementById("restart-confirm-dialog");
+  const restartCancel = document.getElementById("restart-cancel");
+  const restartConfirm = document.getElementById("restart-confirm");
+
   document.getElementById("restart-button")
-    ?.addEventListener("click", onRestart);
+    ?.addEventListener("click", () => {
+      if (restartDialog instanceof HTMLDialogElement && !restartDialog.open) {
+        restartDialog.showModal();
+        restartCancel?.focus();
+      }
+    });
+
+  restartCancel?.addEventListener("click", () => restartDialog?.close());
+  restartConfirm?.addEventListener("click", () => {
+    restartDialog?.close();
+    onRestart();
+  });
 
   document.getElementById("route-message-ok")
     ?.addEventListener("click", closeCurrentRouteMessage);
@@ -467,6 +751,16 @@ export function bindUiActions({ onRestart }) {
     });
 
   document.getElementById("exam-start-dialog")
+    ?.addEventListener("cancel", (event) => {
+      event.preventDefault();
+    });
+
+  document.getElementById("mode-dialog")
+    ?.addEventListener("cancel", (event) => {
+      event.preventDefault();
+    });
+
+  document.getElementById("exam-failure-dialog")
     ?.addEventListener("cancel", (event) => {
       event.preventDefault();
     });

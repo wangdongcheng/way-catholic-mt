@@ -3,15 +3,19 @@ import {
   isHeadingInRange,
 } from "./utils.js";
 import { createSpatialIndex } from "./spatial-index.js";
+import { createRouteProgressTracker } from "./route-progress.js";
 
 export function createEventEngine({
   events,
   streetViewService,
   panorama,
   onEvent,
+  onMissedEvent = () => {},
 }) {
-  const triggeredEvents = new Set();
-  const targetPositions = new Map();
+  const routeProgress = createRouteProgressTracker({
+    events,
+    onMissedEvent,
+  });
   const spatialIndex = createSpatialIndex({
     cellSizeMeters: 100,
   });
@@ -20,7 +24,6 @@ export function createEventEngine({
   let maxEventRadius = 0;
 
   function cacheTargetPosition(event, position) {
-    targetPositions.set(event.id, position);
     spatialIndex.add(event, position);
     maxEventRadius = Math.max(
       maxEventRadius,
@@ -83,9 +86,8 @@ export function createEventEngine({
     );
   }
 
-  function matchesEvent(event, targetPosition) {
+  function matchesCheckpoint(event, targetPosition) {
     const position = panorama.getPosition();
-    const heading = panorama.getPov()?.heading;
 
     if (!position || !targetPosition) {
       return false;
@@ -95,12 +97,18 @@ export function createEventEngine({
       ? event.radius
       : 0;
 
-    if (
-      calculateDistanceMeters(position, targetPosition) > radius
-    ) {
+    return calculateDistanceMeters(
+      position,
+      targetPosition
+    ) <= radius;
+  }
+
+  function matchesEvent(event, targetPosition) {
+    if (!matchesCheckpoint(event, targetPosition)) {
       return false;
     }
 
+    const heading = panorama.getPov()?.heading;
     const hasHeadingRange =
       Number.isFinite(event.headingMin) &&
       Number.isFinite(event.headingMax);
@@ -117,16 +125,28 @@ export function createEventEngine({
   }
 
   function checkNearbyEvents() {
-    for (const { event, position } of nearbyEntries) {
-      if (
-        triggeredEvents.has(event.id) ||
-        !matchesEvent(event, position)
-      ) {
-        continue;
-      }
+    const matches = nearbyEntries
+      .filter(({ event, position }) =>
+        routeProgress.canProcess(event.id) &&
+        matchesCheckpoint(event, position)
+      )
+      .sort((left, right) =>
+        routeProgress.compareEventOrder(
+          left.event.id,
+          right.event.id
+        )
+      );
 
-      triggeredEvents.add(event.id);
-      onEvent(event, position);
+    for (const { event, position } of matches) {
+      routeProgress.markReached(event.id);
+
+      if (
+        routeProgress.canTriggerContent(event.id) &&
+        matchesEvent(event, position)
+      ) {
+        routeProgress.markContentTriggered(event.id);
+        onEvent(event, position);
+      }
     }
   }
 
@@ -141,7 +161,7 @@ export function createEventEngine({
   }
 
   function reset() {
-    triggeredEvents.clear();
+    routeProgress.reset();
   }
 
   return {

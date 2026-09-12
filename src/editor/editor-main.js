@@ -6,6 +6,7 @@ import { downloadRouteJson, readRouteJson } from "./route-exporter.js";
 import { createRouteStore } from "./route-store.js";
 import { groupIssuesByEvent, validateRoute } from "./route-validator.js";
 import { initializeGeocodingCacheExport } from "./geocoding-cache-export.js";
+import { DEFAULT_ROUTE_NAVIGATION } from "../route-normalizer.js";
 
 await initializeGeocodingCacheExport();
 
@@ -19,6 +20,13 @@ const store = createRouteStore();
 const elements = {
   routeSelector: document.getElementById("route-selector"),
   routeName: document.getElementById("route-name"),
+  newRouteButton: document.getElementById("new-route-button"),
+  newRouteDialog: document.getElementById("new-route-dialog"),
+  newRouteForm: document.getElementById("new-route-form"),
+  newRouteId: document.getElementById("new-route-id"),
+  newRouteName: document.getElementById("new-route-name"),
+  newRouteClose: document.getElementById("new-route-close"),
+  newRouteCancel: document.getElementById("new-route-cancel"),
   addButton: document.getElementById("add-event-button"),
   addMenu: document.getElementById("add-event-menu"),
   importButton: document.getElementById("import-button"),
@@ -41,6 +49,8 @@ let editorMap = null;
 let menuPosition = null;
 let latestIssues = [];
 let toastTimer = null;
+let pendingCriticalTrigger = null;
+let activeDataSet = null;
 
 function showToast(message) {
   clearTimeout(toastTimer);
@@ -63,6 +73,66 @@ function uniqueEventId(route, prefix) {
   return id;
 }
 
+function nextRouteId() {
+  const routeNumbers = [...elements.routeSelector.options]
+    .map((option) => /^route-(\d+)$/.exec(option.value)?.[1])
+    .filter(Boolean)
+    .map(Number);
+  const nextNumber = Math.max(0, ...routeNumbers) + 1;
+  return `route-${String(nextNumber).padStart(3, "0")}`;
+}
+
+function confirmDiscardChanges() {
+  return !store.getState().dirty || window.confirm(
+    "Discard the unsaved changes to the current data set?"
+  );
+}
+
+function setDraftOption(route) {
+  elements.routeSelector.querySelector("[data-draft-route]")?.remove();
+
+  const option = document.createElement("option");
+  option.value = `draft:${route.id}`;
+  option.dataset.draftRoute = "true";
+  option.textContent = `Draft: ${route.name}`;
+  elements.routeSelector.append(option);
+  elements.routeSelector.value = option.value;
+  activeDataSet = option.value;
+}
+
+function createNewRoute(routeId, routeName) {
+  const currentStart = store.getState().route?.startState;
+  const route = {
+    id: routeId,
+    name: routeName,
+    startState: {
+      lat: currentStart?.lat ?? 35.8880832,
+      lng: currentStart?.lng ?? 14.5029997,
+      heading: currentStart?.heading ?? 0,
+      pitch: currentStart?.pitch ?? 0,
+      zoom: currentStart?.zoom ?? 1,
+    },
+    events: [],
+    navigation: { ...DEFAULT_ROUTE_NAVIGATION },
+  };
+
+  store.setRoute(route, { dirty: true });
+  editorMap.focusRoute(route);
+  setDraftOption(route);
+  elements.status.textContent = "New route ready for editing";
+
+  const url = new URL(window.location.href);
+  url.searchParams.delete("route");
+  window.history.replaceState({}, "", url);
+  showToast("New route created. Add events, then export the JSON file.");
+}
+
+function getDocumentKind(document) {
+  if (document?.type === "observation-checks") return "observation";
+  if (document?.type === "critical-violations") return "critical";
+  return "exam";
+}
+
 function commandOptions(mode) {
   if (mode === "sequence") {
     return [
@@ -83,21 +153,93 @@ function commandOptions(mode) {
 
 function createEvent(type, position) {
   const route = store.getState().route;
+  const documentKind = getDocumentKind(route);
 
-  if (type === "route-message") {
+  if (type === "critical-destination") {
+    if (!pendingCriticalTrigger) return;
+    const defaults = route.defaults || {};
     store.addEvent({
-      id: uniqueEventId(route, "route-message"),
-      type: "route-message",
-      lat: Number(position.lat.toFixed(7)),
-      lng: Number(position.lng.toFixed(7)),
-      radius: 30,
-      message: "New route message",
-      autoCloseMs: 8000,
-      priority: "normal",
+      id: uniqueEventId(route, "critical-violation"),
+      type: "critical-violation",
+      rule: "wrong-way-entry",
+      enabled: true,
+      oncePerSession: true,
+      triggerCheckpoint: {
+        location: pendingCriticalTrigger,
+        radius: defaults.triggerRadius ?? 15,
+        pano: null,
+      },
+      forbiddenDestination: {
+        location: {
+          lat: Number(position.lat.toFixed(7)),
+          lng: Number(position.lng.toFixed(7)),
+        },
+        radius: defaults.violationRadius ?? 15,
+        pano: null,
+      },
+      windowMs: defaults.windowMs ?? 60000,
+      practiceWarning: {
+        title: "Serious driving error",
+        message: "A critical driving violation was detected.",
+        buttonLabel: "I understand",
+        autoCloseMs: 0,
+      },
+      examFailure: {
+        title: "Test failed",
+        message: "A critical driving violation was detected.",
+        reasonCode: "CRITICAL_VIOLATION",
+      },
     });
-    showToast("Route message added");
+    pendingCriticalTrigger = null;
+    showToast("Critical violation added");
     return;
   }
+
+  if (type === "critical-violation" && documentKind === "critical") {
+    pendingCriticalTrigger = {
+      lat: Number(position.lat.toFixed(7)),
+      lng: Number(position.lng.toFixed(7)),
+    };
+    editorMap.setPlacementMode("critical-destination");
+    elements.placementNotice.textContent =
+      "Step 2 of 2 · Click the forbidden destination · Esc to cancel";
+    elements.placementNotice.hidden = false;
+    return;
+  }
+
+  if (type === "observation-check" && documentKind === "observation") {
+    const defaults = route.defaults || {};
+    store.addEvent({
+      id: uniqueEventId(route, "observation"),
+      type: "observation-check",
+      enabled: true,
+      examEnabled: defaults.examEnabled !== false,
+      observationType: "road-awareness",
+      lat: Number(position.lat.toFixed(7)),
+      lng: Number(position.lng.toFixed(7)),
+      radius: defaults.radius ?? 25,
+      answerRadius: defaults.answerRadius ?? 45,
+      pano: null,
+      penaltyOnMiss: defaults.penaltyOnMiss ?? 3,
+      penaltyOnIncorrect: defaults.penaltyOnIncorrect ?? 1,
+      practiceMessage: {
+        message: "New practice observation message",
+        priority: "normal",
+      },
+    });
+    showToast("Observation check added");
+    return;
+  }
+
+  if (documentKind !== "exam" || !["single", "multiple", "sequence"].includes(type)) {
+    showToast("This event type belongs in a different data set");
+    return;
+  }
+
+  const {
+    eventsAreCheckpoints: required,
+    defaultPenaltyOnMiss: penaltyOnMiss,
+  } = route.navigation;
 
   const options = commandOptions(type);
   const event = {
@@ -106,6 +248,8 @@ function createEvent(type, position) {
     lat: Number(position.lat.toFixed(7)),
     lng: Number(position.lng.toFixed(7)),
     radius: 25,
+    required,
+    penaltyOnMiss,
     answerRadius: 60,
     command: "New examiner command",
     answerMode: type,
@@ -114,7 +258,6 @@ function createEvent(type, position) {
     penaltyOnOutOfRange: 1,
     outOfRangeRouteMessage: {
       message: "You left the answering area without answering. 1 point deducted.",
-      autoCloseMs: 0,
       priority: "high",
     },
   };
@@ -124,24 +267,20 @@ function createEvent(type, position) {
     event.penalty = 2;
     event.correctRouteMessage = {
       message: "Correct sequence.",
-      autoCloseMs: 5000,
       priority: "high",
     };
     event.incorrectRouteMessage = {
       message: "The steps were not selected in the correct order.",
-      autoCloseMs: 0,
       priority: "high",
     };
   } else if (type === "multiple") {
     event.penalty = 1;
     event.correctRouteMessage = {
       message: "Correct selection.",
-      autoCloseMs: 5000,
       priority: "high",
     };
     event.incorrectRouteMessage = {
       message: "The selected answers were not correct.",
-      autoCloseMs: 0,
       priority: "high",
     };
   }
@@ -157,6 +296,12 @@ function hideAddMenu() {
 
 function showAddMenu({ clientX, clientY, position = null }) {
   menuPosition = position;
+  const documentType = getDocumentKind(store.getState().route);
+
+  elements.addMenu.querySelectorAll("[data-document]")
+    .forEach((button) => {
+      button.hidden = button.dataset.document !== documentType;
+    });
   elements.addMenu.hidden = false;
   elements.addMenu.style.left = `${Math.min(clientX, window.innerWidth - 250)}px`;
   elements.addMenu.style.top = `${Math.min(clientY, window.innerHeight - 210)}px`;
@@ -189,13 +334,20 @@ async function loadRoute(routeId) {
   elements.status.textContent = `Loading ${routeId}…`;
 
   try {
-    const response = await fetch(`/data/routes/${routeId}.json`);
+    const path = routeId === "observation-checks"
+      ? "/data/observation-checks.json"
+      : routeId === "critical-violations"
+        ? "/data/critical-violations.json"
+        : `/data/routes/${routeId}.json`;
+    const response = await fetch(path);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const route = await response.json();
 
     store.setRoute(route);
     editorMap.focusRoute(route);
+    elements.routeSelector.querySelector("[data-draft-route]")?.remove();
     elements.routeSelector.value = routeId;
+    activeDataSet = routeId;
     elements.status.textContent = `${route.events.length} events loaded`;
 
     const url = new URL(window.location.href);
@@ -203,6 +355,7 @@ async function loadRoute(routeId) {
     window.history.replaceState({}, "", url);
   } catch (error) {
     console.error("Failed to load route:", error);
+    if (activeDataSet) elements.routeSelector.value = activeDataSet;
     elements.status.textContent = `Could not load ${routeId}`;
     showToast("Route could not be loaded");
   }
@@ -228,11 +381,19 @@ editorMap = await createEditorMap({
     createEvent(type, position);
   },
   onSelect: (eventId) => store.selectEvent(eventId),
-  onPositionChange: (eventId, position) => {
-    store.updateEvent(eventId, {
+  onPositionChange: (eventId, position, point = "event") => {
+    const nextPosition = {
       lat: Number(position.lat.toFixed(7)),
       lng: Number(position.lng.toFixed(7)),
-    });
+    };
+
+    if (point === "event") {
+      store.updateEvent(eventId, nextPosition);
+    } else {
+      store.mutateEvent(eventId, (event) => {
+        event[point].location = nextPosition;
+      });
+    }
   },
 });
 
@@ -249,6 +410,10 @@ store.subscribe((state) => {
   renderValidation(latestIssues);
 
   elements.routeName.value = state.route?.name || "";
+  const draftOption = elements.routeSelector.querySelector("[data-draft-route]");
+  if (draftOption && elements.routeSelector.value === draftOption.value) {
+    draftOption.textContent = `Draft: ${state.route?.name || state.route?.id || "New route"}`;
+  }
   elements.dirty.textContent = state.dirty
     ? "Unsaved changes"
     : "Loaded source";
@@ -276,6 +441,9 @@ elements.addMenu.addEventListener("click", (event) => {
     createEvent(type, position);
   } else {
     editorMap.setPlacementMode(type);
+    elements.placementNotice.textContent = type === "critical-violation"
+      ? "Step 1 of 2 · Click the trigger checkpoint · Esc to cancel"
+      : "Click the map to place the event · Esc to cancel";
     elements.placementNotice.hidden = false;
   }
 });
@@ -290,12 +458,47 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     hideAddMenu();
     editorMap.cancelPlacement();
+    pendingCriticalTrigger = null;
     elements.placementNotice.hidden = true;
   }
 });
 
-elements.routeSelector.addEventListener("change", () => {
-  loadRoute(elements.routeSelector.value);
+elements.routeSelector.addEventListener("change", async () => {
+  const routeId = elements.routeSelector.value;
+  if (!confirmDiscardChanges()) {
+    elements.routeSelector.value = activeDataSet;
+    return;
+  }
+
+  await loadRoute(routeId);
+});
+
+elements.newRouteButton.addEventListener("click", () => {
+  const routeId = nextRouteId();
+  elements.newRouteId.value = routeId;
+  elements.newRouteName.value = `Route ${Number(routeId.split("-")[1])}`;
+  elements.newRouteDialog.showModal();
+  elements.newRouteId.select();
+});
+
+elements.newRouteForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const routeId = elements.newRouteId.value.trim();
+  const routeName = elements.newRouteName.value.trim();
+
+  if (!routeId || !routeName || !elements.newRouteForm.reportValidity()) return;
+  if (!confirmDiscardChanges()) return;
+
+  elements.newRouteDialog.close();
+  createNewRoute(routeId, routeName);
+});
+
+elements.newRouteClose.addEventListener("click", () => {
+  elements.newRouteDialog.close();
+});
+
+elements.newRouteCancel.addEventListener("click", () => {
+  elements.newRouteDialog.close();
 });
 
 elements.routeName.addEventListener("change", () => {
@@ -354,7 +557,12 @@ elements.validationResults.addEventListener("click", (event) => {
 const initialRoute = new URLSearchParams(window.location.search)
   .get("route") || "route-001";
 await loadRoute(
-  ["route-001", "route-002"].includes(initialRoute)
+  [
+    "route-001",
+    "route-002",
+    "observation-checks",
+    "critical-violations",
+  ].includes(initialRoute)
     ? initialRoute
     : "route-001"
 );

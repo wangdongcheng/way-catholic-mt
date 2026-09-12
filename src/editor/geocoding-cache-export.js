@@ -285,9 +285,9 @@ async function prepareExport(dialog) {
 }
 
 export async function initializeGeocodingCacheExport() {
-  const params = new URLSearchParams(window.location.search);
+  const exportCacheEnabled = new URLSearchParams(window.location.search).get("exportcache") === "1";
 
-  if (!params.has("exportcache")) {
+  if (!exportCacheEnabled) {
     return false;
   }
 

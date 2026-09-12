@@ -247,6 +247,10 @@ h1 {
   background: #f97316;
 }
 
+.legend-dot.critical {
+  background: #dc2626;
+}
+
 .legend-ring.answer {
   border: 2px solid #facc15;
   border-radius: 50%;
@@ -388,6 +392,13 @@ h1 {
   color: #2563eb;
   font-size: 0.78rem;
   font-weight: 750;
+}
+
+.form-help {
+  margin: 10px 0 0;
+  color: #64748b;
+  font-size: 0.76rem;
+  line-height: 1.45;
 }
 
 .options-list {
@@ -573,6 +584,36 @@ h1 {
 
 #validation-dialog::backdrop {
   background: rgba(15, 23, 42, 0.5);
+}
+
+#new-route-dialog {
+  width: min(440px, calc(100vw - 32px));
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.3);
+}
+
+#new-route-dialog::backdrop {
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.new-route-fields {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+.new-route-fields .form-help {
+  margin-top: 0;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 18px;
+  border-top: 1px solid #e2e8f0;
 }
 
 .dialog-header {
