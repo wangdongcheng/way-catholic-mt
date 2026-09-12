@@ -18,29 +18,25 @@
 
       <label class="toolbar-field">
         <span>Data set</span>
-        <select id="route-selector">
-          <option value="route-001">Demo Route 1</option>
-          <option value="route-002">Demo Route 2</option>
-          <option value="observation-checks">Observation Checks</option>
-          <option value="critical-violations">Critical Violations</option>
-        </select>
+        <select id="route-selector" disabled></select>
       </label>
 
       <label class="toolbar-field route-name-field">
         <span>Name</span>
-        <input id="route-name" type="text" />
+        <input id="route-name" type="text" disabled />
       </label>
 
       <div class="toolbar-actions">
-        <button id="new-route-button" class="button" type="button">
+        <button id="connect-folder-button" class="button" type="button">
+          Connect data folder
+        </button>
+        <button id="new-route-button" class="button" type="button" disabled>
           New route
         </button>
-        <button id="add-event-button" class="button primary" type="button">
+        <button id="add-event-button" class="button primary" type="button" disabled>
           + Add event
         </button>
-        <button id="import-button" class="button" type="button">Import</button>
-        <button id="export-button" class="button" type="button">Export JSON</button>
-        <input id="import-file" type="file" accept="application/json,.json" hidden />
+        <button id="save-button" class="button" type="button" disabled>Save</button>
       </div>
     </header>
 
@@ -113,7 +109,7 @@
           <span>Route ID</span>
           <input id="new-route-id" name="routeId" type="text"
             pattern="[A-Za-z0-9][A-Za-z0-9_-]*" required />
-          <span class="form-help">Used as the exported JSON filename.</span>
+          <span class="form-help">Used as the saved JSON filename.</span>
         </label>
         <label class="form-field">
           <span>Name</span>

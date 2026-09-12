@@ -2,7 +2,13 @@ import "./editor-style.css";
 
 import { createEditorMap } from "./editor-map.js";
 import { createEventForm } from "./event-form.js";
-import { downloadRouteJson, readRouteJson } from "./route-exporter.js";
+import {
+  connectDataDirectory,
+  listLocalDataSets,
+  readLocalDataSet,
+  supportsLocalDataFiles,
+  writeLocalDataSet,
+} from "./local-data-files.js";
 import { createRouteStore } from "./route-store.js";
 import { groupIssuesByEvent, validateRoute } from "./route-validator.js";
 import { initializeGeocodingCacheExport } from "./geocoding-cache-export.js";
@@ -29,9 +35,8 @@ const elements = {
   newRouteCancel: document.getElementById("new-route-cancel"),
   addButton: document.getElementById("add-event-button"),
   addMenu: document.getElementById("add-event-menu"),
-  importButton: document.getElementById("import-button"),
-  importFile: document.getElementById("import-file"),
-  exportButton: document.getElementById("export-button"),
+  connectFolderButton: document.getElementById("connect-folder-button"),
+  saveButton: document.getElementById("save-button"),
   placementNotice: document.getElementById("placement-notice"),
   eventForm: document.getElementById("event-form"),
   eventTitle: document.getElementById("selected-event-title"),
@@ -51,6 +56,7 @@ let latestIssues = [];
 let toastTimer = null;
 let pendingCriticalTrigger = null;
 let activeDataSet = null;
+let dataDirectory = null;
 
 function showToast(message) {
   clearTimeout(toastTimer);
@@ -88,6 +94,26 @@ function confirmDiscardChanges() {
   );
 }
 
+function setWorkspaceEnabled(enabled) {
+  elements.routeSelector.disabled = !enabled;
+  elements.routeName.disabled = !enabled;
+  elements.newRouteButton.disabled = !enabled;
+  elements.addButton.disabled = !enabled;
+  elements.saveButton.disabled = !enabled;
+}
+
+function populateDataSetSelector(dataSets) {
+  elements.routeSelector.replaceChildren();
+
+  for (const dataSet of dataSets) {
+    const option = document.createElement("option");
+    option.value = dataSet.id;
+    option.textContent = dataSet.name;
+    option.disabled = !dataSet.valid;
+    elements.routeSelector.append(option);
+  }
+}
+
 function setDraftOption(route) {
   elements.routeSelector.querySelector("[data-draft-route]")?.remove();
 
@@ -117,6 +143,7 @@ function createNewRoute(routeId, routeName) {
   };
 
   store.setRoute(route, { dirty: true });
+  setWorkspaceEnabled(true);
   editorMap.focusRoute(route);
   setDraftOption(route);
   elements.status.textContent = "New route ready for editing";
@@ -124,7 +151,7 @@ function createNewRoute(routeId, routeName) {
   const url = new URL(window.location.href);
   url.searchParams.delete("route");
   window.history.replaceState({}, "", url);
-  showToast("New route created. Add events, then export the JSON file.");
+  showToast("New route created. Add events, then save the JSON file.");
 }
 
 function getDocumentKind(document) {
@@ -316,7 +343,7 @@ function renderValidation(issues) {
 
   if (issues.length === 0) {
     elements.validationResults.innerHTML = `
-      <div class="validation-empty">This route is ready to export.</div>
+      <div class="validation-empty">This route is ready to save.</div>
     `;
     return;
   }
@@ -334,14 +361,7 @@ async function loadRoute(routeId) {
   elements.status.textContent = `Loading ${routeId}…`;
 
   try {
-    const path = routeId === "observation-checks"
-      ? "/data/observation-checks.json"
-      : routeId === "critical-violations"
-        ? "/data/critical-violations.json"
-        : `/data/routes/${routeId}.json`;
-    const response = await fetch(path);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const route = await response.json();
+    const route = await readLocalDataSet(dataDirectory, routeId);
 
     store.setRoute(route);
     editorMap.focusRoute(route);
@@ -353,11 +373,64 @@ async function loadRoute(routeId) {
     const url = new URL(window.location.href);
     url.searchParams.set("route", routeId);
     window.history.replaceState({}, "", url);
+    setWorkspaceEnabled(true);
+    return true;
   } catch (error) {
     console.error("Failed to load route:", error);
     if (activeDataSet) elements.routeSelector.value = activeDataSet;
     elements.status.textContent = `Could not load ${routeId}`;
     showToast("Route could not be loaded");
+    return false;
+  }
+}
+
+async function connectFolder() {
+  if (!confirmDiscardChanges()) return;
+
+  elements.connectFolderButton.disabled = true;
+  elements.status.textContent = "Connecting public/data…";
+
+  try {
+    const directory = await connectDataDirectory({
+      forcePicker: dataDirectory !== null,
+    });
+    const dataSets = await listLocalDataSets(directory);
+
+    dataDirectory = directory;
+    activeDataSet = null;
+    populateDataSetSelector(dataSets);
+    setWorkspaceEnabled(false);
+    elements.routeSelector.disabled = !dataSets.some((item) => item.valid);
+    elements.newRouteButton.disabled = false;
+    elements.connectFolderButton.textContent = "Change data folder";
+
+    const requestedRoute = new URLSearchParams(window.location.search)
+      .get("route");
+    const initialRoute = dataSets.some(
+      (item) => item.id === requestedRoute && item.valid
+    )
+      ? requestedRoute
+      : dataSets.find((item) => item.valid)?.id;
+
+    if (initialRoute) {
+      elements.routeSelector.value = initialRoute;
+      await loadRoute(initialRoute);
+    } else {
+      elements.status.textContent = "No valid JSON data sets found";
+    }
+  } catch (error) {
+    if (error.name === "AbortError") {
+      elements.status.textContent = dataDirectory
+        ? "Data folder unchanged"
+        : "Connect public/data to begin";
+      return;
+    }
+
+    console.error("Failed to connect data folder:", error);
+    elements.status.textContent = "Could not connect data folder";
+    showToast(error.message || "The data folder could not be connected");
+  } finally {
+    elements.connectFolderButton.disabled = false;
   }
 }
 
@@ -486,7 +559,14 @@ elements.newRouteForm.addEventListener("submit", (event) => {
   const routeId = elements.newRouteId.value.trim();
   const routeName = elements.newRouteName.value.trim();
 
+  elements.newRouteId.setCustomValidity("");
   if (!routeId || !routeName || !elements.newRouteForm.reportValidity()) return;
+  if ([...elements.routeSelector.options]
+    .some((option) => option.value === routeId)) {
+    elements.newRouteId.setCustomValidity("This route ID already exists.");
+    elements.newRouteId.reportValidity();
+    return;
+  }
   if (!confirmDiscardChanges()) return;
 
   elements.newRouteDialog.close();
@@ -505,38 +585,47 @@ elements.routeName.addEventListener("change", () => {
   store.updateRoute({ name: elements.routeName.value });
 });
 
-elements.importButton.addEventListener("click", () => {
-  elements.importFile.click();
-});
+elements.connectFolderButton.addEventListener("click", connectFolder);
 
-elements.importFile.addEventListener("change", async () => {
-  const [file] = elements.importFile.files;
-  if (!file) return;
-
-  try {
-    const route = await readRouteJson(file);
-    store.setRoute(route, { dirty: true });
-    editorMap.focusRoute(route);
-    elements.status.textContent = `${route.events?.length || 0} imported events`;
-    showToast("Route imported. Review validation before export.");
-  } catch (error) {
-    console.error("Failed to import route:", error);
-    showToast("The selected file is not valid JSON");
-  } finally {
-    elements.importFile.value = "";
-  }
-});
-
-elements.exportButton.addEventListener("click", () => {
+elements.saveButton.addEventListener("click", async () => {
   const errors = latestIssues.filter((item) => item.level === "error");
   if (errors.length > 0) {
     elements.validationDialog.showModal();
-    showToast("Fix validation errors before exporting");
+    showToast("Fix validation errors before saving");
     return;
   }
 
-  downloadRouteJson(store.getState().route);
-  showToast("Route JSON exported");
+  elements.saveButton.disabled = true;
+
+  try {
+    const route = store.getState().route;
+    const path = await writeLocalDataSet(dataDirectory, route);
+    const draftOption = elements.routeSelector.querySelector("[data-draft-route]");
+
+    if (draftOption && elements.routeSelector.value === draftOption.value) {
+      draftOption.value = route.id;
+      delete draftOption.dataset.draftRoute;
+      activeDataSet = route.id;
+      elements.routeSelector.value = route.id;
+    }
+
+    const activeOption = elements.routeSelector.selectedOptions[0];
+    if (activeOption) activeOption.textContent = route.name || route.id;
+
+    store.markSaved();
+    elements.status.textContent = `Saved to ${path}`;
+    showToast(`Saved to ${path}`);
+
+    const url = new URL(window.location.href);
+    url.searchParams.set("route", route.id);
+    window.history.replaceState({}, "", url);
+  } catch (error) {
+    console.error("Failed to save data set:", error);
+    elements.status.textContent = "Could not save data set";
+    showToast("The JSON file could not be saved");
+  } finally {
+    elements.saveButton.disabled = false;
+  }
 });
 
 elements.validationToggle.addEventListener("click", () => {
@@ -554,15 +643,8 @@ elements.validationResults.addEventListener("click", (event) => {
   elements.validationDialog.close();
 });
 
-const initialRoute = new URLSearchParams(window.location.search)
-  .get("route") || "route-001";
-await loadRoute(
-  [
-    "route-001",
-    "route-002",
-    "observation-checks",
-    "critical-violations",
-  ].includes(initialRoute)
-    ? initialRoute
-    : "route-001"
-);
+setWorkspaceEnabled(false);
+elements.status.textContent = supportsLocalDataFiles()
+  ? "Connect public/data to begin"
+  : "This editor requires desktop Chrome or Edge";
+elements.connectFolderButton.disabled = !supportsLocalDataFiles();
