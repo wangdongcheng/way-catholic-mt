@@ -12,6 +12,7 @@
     {
       "id": "route-002-sequence-command",
       "type": "examiner-command",
+      "grievousFault": false,
       "lat": 35.8880832,
       "lng": 14.5029997,
       "radius": 20,

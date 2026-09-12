@@ -189,6 +189,7 @@ function createEvent(type, position) {
     store.addEvent({
       id: uniqueEventId(route, "critical-violation"),
       type: "critical-violation",
+      grievousFault: false,
       rule: "wrong-way-entry",
       enabled: true,
       oncePerSession: true,
@@ -240,6 +241,7 @@ function createEvent(type, position) {
     store.addEvent({
       id: uniqueEventId(route, "observation"),
       type: "observation-check",
+      grievousFault: false,
       enabled: true,
       examEnabled: defaults.examEnabled !== false,
       observationType: "road-awareness",
@@ -273,6 +275,7 @@ function createEvent(type, position) {
   const event = {
     id: uniqueEventId(route, "examiner-command"),
     type: "examiner-command",
+    grievousFault: false,
     lat: Number(position.lat.toFixed(7)),
     lng: Number(position.lng.toFixed(7)),
     radius: 25,

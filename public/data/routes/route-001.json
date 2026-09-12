@@ -12,6 +12,7 @@
     {
       "id": "examiner-command-001",
       "type": "examiner-command",
+      "grievousFault": false,
       "lat": 35.8883578,
       "lng": 14.5031947,
       "radius": 20,
@@ -64,6 +65,7 @@
     {
       "id": "examiner-command-002",
       "type": "examiner-command",
+      "grievousFault": false,
       "lat": 35.8891213,
       "lng": 14.5034454,
       "radius": 20,

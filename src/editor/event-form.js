@@ -87,6 +87,19 @@ function commonFields(event) {
   `;
 }
 
+function faultFields(event) {
+  return `
+    <section class="form-section">
+      <h3>Fault classification</h3>
+      <label class="correct-control">
+        <input type="checkbox" data-field="grievousFault"
+          ${event.grievousFault ? "checked" : ""} />
+        Grievous fault
+      </label>
+    </section>
+  `;
+}
+
 function checkpointFields(event, route) {
   const defaultPenalty = route.navigation.defaultPenaltyOnMiss;
 
@@ -453,6 +466,7 @@ export function createEventForm({ container, title, store }) {
 
     container.innerHTML = `
       ${isObservation || isCritical ? "" : routeNavigationFields(state.route)}
+      ${faultFields(event)}
       ${isCritical ? criticalViolationFields(event) : commonFields(event)}
       ${isObservation || isCritical ? "" : checkpointFields(event, state.route)}
       ${isObservation
@@ -540,7 +554,11 @@ export function createEventForm({ container, title, store }) {
 
         if (field === "required") {
           event.required = target.checked;
-        } else if (field === "enabled" || field === "examEnabled") {
+        } else if (
+          field === "enabled" ||
+          field === "examEnabled" ||
+          field === "grievousFault"
+        ) {
           event[field] = target.checked;
         } else if (field === "answerMode") {
           normalizeAnswerMode(event, target.value);

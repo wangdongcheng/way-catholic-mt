@@ -20,6 +20,7 @@
     {
       "id": "observation-road-awareness-001",
       "type": "observation-check",
+      "grievousFault": false,
       "enabled": true,
       "examEnabled": true,
       "observationType": "road-awareness",
@@ -38,6 +39,7 @@
     {
       "id": "observation-road-narrowing-001",
       "type": "observation-check",
+      "grievousFault": false,
       "enabled": true,
       "examEnabled": false,
       "observationType": "road-narrowing",
