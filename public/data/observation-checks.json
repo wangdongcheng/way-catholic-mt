@@ -41,8 +41,8 @@
       "enabled": true,
       "examEnabled": false,
       "observationType": "road-narrowing",
-      "lat": 35.8894813,
-      "lng": 14.503673,
+      "lat": 35.8897667,
+      "lng": 14.5038232,
       "radius": 17,
       "pano": null,
       "practiceMessage": {
