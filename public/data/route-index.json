@@ -1,10 +1,10 @@
 [
   {
-    "id": "route-002",
-    "name": "Demo Route 2 — Five-Step Sequence"
-  },
-  {
     "id": "route-001",
     "name": "Route 1 — Single and Multiple Choice"
+  },
+  {
+    "id": "route-002",
+    "name": "Route 2 — Five-Step Sequence"
   }
 ]
