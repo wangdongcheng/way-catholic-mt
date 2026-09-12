@@ -2,6 +2,17 @@
 
 本文件根据仓库提交历史按主要功能里程碑整理，不逐条记录分支合并、实验性提交和单纯的数据缓存更新。
 
+## 2026-09-12 — Route Editor 本地目录工作流
+
+- Route Editor 改为直接维护本地 `public/data` 目录：
+  - 首次连接后保存目录句柄，后续可复用已授权的目录。
+  - 动态扫描 `routes/*.json`、`observation-checks.json` 和 `critical-violations.json` 并建立数据集菜单。
+  - 移除写死的数据集清单以及路线 JSON 的导入、下载流程。
+  - `Save` 直接创建或覆盖对应的本地 JSON 文件。
+  - 新路线保存后自动从草稿转为正式数据集，并阻止重复路线 ID 覆盖已有路线。
+- 未连接数据目录时禁用路线编辑操作，并明确提示需要桌面版 Chrome 或 Edge。
+- Editor 地图启用地图类型控件，可切换普通地图与卫星图层。
+
 ## 2026-09-11 — Observation 系统与 MDTS 品牌
 
 - 将产品界面统一命名为 **MDTS - Malta Driving Test Simulator**。
