@@ -1,6 +1,6 @@
 {
   "id": "route-001",
-  "name": "Route 1 — Single Choice",
+  "name": "Route 1 — Single and Multiple Choice",
   "startState": {
     "lat": 35.8880832,
     "lng": 14.5029997,
@@ -58,6 +58,55 @@
       },
       "headingMin": 340,
       "headingMax": 60,
+      "required": true,
+      "penaltyOnMiss": 5
+    },
+    {
+      "id": "examiner-command-002",
+      "type": "examiner-command",
+      "lat": 35.8889359,
+      "lng": 14.5032415,
+      "radius": 20,
+      "answerRadius": 60,
+      "command": "Select all checks required before changing direction.",
+      "answerMode": "multiple",
+      "optionLayout": "single-column",
+      "options": [
+        {
+          "id": "mirrors",
+          "label": "Check mirrors",
+          "correct": true
+        },
+        {
+          "id": "blind-spot",
+          "label": "Check the blind spot",
+          "correct": true
+        },
+        {
+          "id": "road-clear",
+          "label": "Check that the road is clear",
+          "correct": true
+        },
+        {
+          "id": "ignore-traffic",
+          "label": "Ignore surrounding traffic",
+          "correct": false
+        }
+      ],
+      "penalty": 2,
+      "correctRouteMessage": {
+        "message": "Correct. All required observations were selected.",
+        "priority": "high"
+      },
+      "incorrectRouteMessage": {
+        "message": "Not all required observations were selected. 2 points deducted.",
+        "priority": "high"
+      },
+      "penaltyOnOutOfRange": 1,
+      "outOfRangeRouteMessage": {
+        "message": "You left the answering area without answering. 1 point deducted.",
+        "priority": "high"
+      },
       "required": true,
       "penaltyOnMiss": 5
     }
