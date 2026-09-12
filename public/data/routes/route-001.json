@@ -65,7 +65,7 @@
     {
       "id": "examiner-command-002",
       "type": "examiner-command",
-      "grievousFault": false,
+      "grievousFault": true,
       "lat": 35.8891213,
       "lng": 14.5034454,
       "radius": 20,
