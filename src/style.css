@@ -565,11 +565,12 @@ body[data-mode="selection"] #restart-button {
 
 #restart-button {
   bottom: 20px;
+  background: #dc2626;
   cursor: pointer;
 }
 
 #restart-button:hover {
-  background: rgba(0, 0, 0, 0.9);
+  background: #b91c1c;
 }
 
 #restart-confirm-dialog {
