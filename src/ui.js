@@ -691,26 +691,31 @@ export function setObservationToolbarVisible(visible) {
   }
 }
 
-export function showExamFailure(failure, { onRestart }) {
+export function showExamFailure(failure, { onRestart, onContinue = null }) {
   const dialog = document.getElementById("exam-failure-dialog");
+  const eyebrow = document.getElementById("exam-failure-eyebrow");
   const title = document.getElementById("exam-failure-title");
   const message = document.getElementById("exam-failure-message");
   const reason = document.getElementById("exam-failure-reason");
+  const continueButton = document.getElementById("practice-continue");
   const restart = document.getElementById("exam-failure-restart");
 
   if (!(dialog instanceof HTMLDialogElement)) {
     return;
   }
 
+  eyebrow.textContent = onContinue ? "Practice" : "Driving Test";
   title.textContent = failure?.title || "Test failed";
   message.textContent = failure?.message || "A critical driving violation was detected.";
   reason.textContent = failure?.reasonCode
     ? `Reason: ${failure.reasonCode}`
     : "";
+  continueButton.hidden = !onContinue;
+  continueButton.onclick = onContinue;
   restart.onclick = onRestart;
 
   if (!dialog.open) dialog.showModal();
-  restart.focus();
+  (onContinue ? continueButton : restart).focus();
 }
 
 export function hideExamFailure() {

@@ -103,11 +103,14 @@
 
   <dialog id="exam-failure-dialog" aria-labelledby="exam-failure-title">
     <div id="exam-failure-panel">
-      <div class="failure-eyebrow">Driving Test</div>
+      <div id="exam-failure-eyebrow" class="failure-eyebrow">Driving Test</div>
       <h1 id="exam-failure-title">Test failed</h1>
       <p id="exam-failure-message"></p>
       <div id="exam-failure-reason"></div>
-      <button id="exam-failure-restart" type="button">Restart</button>
+      <div id="exam-failure-actions">
+        <button id="practice-continue" type="button" hidden>Continue practice</button>
+        <button id="exam-failure-restart" type="button">↺ Restart</button>
+      </div>
     </div>
   </dialog>
 

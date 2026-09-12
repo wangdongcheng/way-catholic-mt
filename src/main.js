@@ -529,11 +529,26 @@ async function initApp() {
     });
 
     if (mode === "practice") {
-      showRouteMessage({
+      driveStarted = false;
+      setLocationUpdatesEnabled(false);
+      clearRouteMessages();
+      hideCurrentInfo();
+      setStreetViewLocked(panorama, true);
+      showExamFailure({
         ...(event.practiceWarning || {}),
         message: event.practiceWarning?.message ||
           "A serious driving error was detected.",
-        priority: "critical",
+      }, {
+        onContinue: () => {
+          hideExamFailure();
+          driveStarted = true;
+          setLocationUpdatesEnabled(true);
+          setStreetViewLocked(panorama, false);
+          updatePanoramaInfo(panorama);
+          scheduleLocationUpdate(panorama, streetView.geocoder);
+          showInfoTemporarily();
+        },
+        onRestart: resetToModeChooser,
       });
       return;
     }

@@ -434,16 +434,31 @@ body[data-mode="selection"] #restart-button {
   font-weight: 800;
 }
 
+#exam-failure-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+#practice-continue,
 #exam-failure-restart {
   width: 100%;
   padding: 11px 16px;
   border: 0;
   border-radius: 9px;
-  background: #f8fafc;
-  color: #7f1d1d;
   font: inherit;
   font-weight: 800;
   cursor: pointer;
+}
+
+#practice-continue {
+  background: #dc2626;
+  color: white;
+}
+
+#exam-failure-restart {
+  background: #f8fafc;
+  color: #7f1d1d;
 }
 
 #examiner-command[hidden],
