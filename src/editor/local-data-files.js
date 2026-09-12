@@ -122,6 +122,24 @@ function routeIdFromFilename(filename) {
   return filename.slice(0, -".json".length);
 }
 
+function compareDataSets(left, right) {
+  return left.name.localeCompare(right.name, "en", {
+    sensitivity: "base",
+    numeric: true,
+  }) || left.id.localeCompare(right.id, "en", { numeric: true });
+}
+
+async function writeJsonFile(directoryHandle, filename, value) {
+  const fileHandle = await directoryHandle.getFileHandle(filename, {
+    create: true,
+  });
+  const writable = await fileHandle.createWritable();
+  const contents = `${JSON.stringify(value, null, 2)}\n`;
+
+  await writable.write(contents);
+  await writable.close();
+}
+
 export function supportsLocalDataFiles() {
   return typeof window.showDirectoryPicker === "function" &&
     typeof indexedDB !== "undefined";
@@ -164,7 +182,7 @@ export async function listLocalDataSets(directoryHandle) {
     routeDataSets.push({ id, name, kind: "route", valid });
   }
 
-  routeDataSets.sort((left, right) => left.id.localeCompare(right.id));
+  routeDataSets.sort(compareDataSets);
 
   const globalDataSets = await Promise.all(GLOBAL_DATA_SETS.map(async (dataSet) => {
     const handle = await directoryHandle.getFileHandle(dataSet.filename);
@@ -211,12 +229,18 @@ export async function writeLocalDataSet(directoryHandle, document) {
     filename = `${document.id}.json`;
   }
 
-  const fileHandle = await directory.getFileHandle(filename, { create: true });
-  const writable = await fileHandle.createWritable();
-  const contents = `${JSON.stringify(prepareRouteForExport(document), null, 2)}\n`;
-
-  await writable.write(contents);
-  await writable.close();
+  await writeJsonFile(directory, filename, prepareRouteForExport(document));
 
   return globalDataSet ? filename : `routes/${filename}`;
+}
+
+export async function writeLocalRouteIndex(directoryHandle) {
+  const dataSets = await listLocalDataSets(directoryHandle);
+  const routes = dataSets
+    .filter((dataSet) => dataSet.kind === "route" && dataSet.valid)
+    .map(({ id, name }) => ({ id, name }))
+    .sort(compareDataSets);
+
+  await writeJsonFile(directoryHandle, "route-index.json", routes);
+  return dataSets;
 }

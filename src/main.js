@@ -1,10 +1,10 @@
 import "./style.css";
 
 import {
-  AVAILABLE_ROUTES,
   getInitialState,
   getRequestedMode,
   getRequestedRouteId,
+  loadAvailableRoutes,
   loadCriticalViolations,
   loadObservationChecks,
   loadObservationTypes,
@@ -285,9 +285,16 @@ function handleRouteEvent(event, targetPosition) {
 async function initApp() {
   const mode = getRequestedMode();
   const requestedRouteId = getRequestedRouteId();
-  const [route, observationDocument, observationTypes, criticalDocument] =
+  const [
+    route,
+    availableRoutes,
+    observationDocument,
+    observationTypes,
+    criticalDocument,
+  ] =
     await Promise.all([
       loadRouteConfig(requestedRouteId),
+      loadAvailableRoutes(),
       loadObservationChecks(),
       loadObservationTypes(),
       loadCriticalViolations(),
@@ -483,15 +490,15 @@ async function initApp() {
 
   const selectExamRoute = (selection) => {
     const routeId = selection === "random"
-      ? AVAILABLE_ROUTES[
-          Math.floor(Math.random() * AVAILABLE_ROUTES.length)
+      ? availableRoutes[
+          Math.floor(Math.random() * availableRoutes.length)
         ].id
       : selection;
     navigateToMode("exam", routeId);
   };
 
   const showModeChooser = () => {
-    showModeSelection(AVAILABLE_ROUTES, {
+    showModeSelection(availableRoutes, {
       selectedRouteId: requestedRouteId,
       onPractice: () => navigateToMode("practice"),
       onExam: selectExamRoute,

@@ -8,6 +8,7 @@ import {
   readLocalDataSet,
   supportsLocalDataFiles,
   writeLocalDataSet,
+  writeLocalRouteIndex,
 } from "./local-data-files.js";
 import { createRouteStore } from "./route-store.js";
 import { groupIssuesByEvent, validateRoute } from "./route-validator.js";
@@ -600,17 +601,18 @@ elements.saveButton.addEventListener("click", async () => {
   try {
     const route = store.getState().route;
     const path = await writeLocalDataSet(dataDirectory, route);
-    const draftOption = elements.routeSelector.querySelector("[data-draft-route]");
+    const isRoute = route.type !== "observation-checks" &&
+      route.type !== "critical-violations";
 
-    if (draftOption && elements.routeSelector.value === draftOption.value) {
-      draftOption.value = route.id;
-      delete draftOption.dataset.draftRoute;
+    if (isRoute) {
+      const dataSets = await writeLocalRouteIndex(dataDirectory);
+      populateDataSetSelector(dataSets);
       activeDataSet = route.id;
       elements.routeSelector.value = route.id;
+    } else {
+      const activeOption = elements.routeSelector.selectedOptions[0];
+      if (activeOption) activeOption.textContent = route.name || route.id;
     }
-
-    const activeOption = elements.routeSelector.selectedOptions[0];
-    if (activeOption) activeOption.textContent = route.name || route.id;
 
     store.markSaved();
     elements.status.textContent = `Saved to ${path}`;

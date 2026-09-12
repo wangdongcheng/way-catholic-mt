@@ -4,7 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "routes:index": "node scripts/generate-route-index.js",
+    "predev": "npm run routes:index",
     "dev": "vite",
+    "prebuild": "npm run routes:index",
     "build": "vite build",
     "preview": "vite preview"
   },

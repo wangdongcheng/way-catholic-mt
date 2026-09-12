@@ -3,15 +3,11 @@ import { normalizeRouteConfig } from "./route-normalizer.js";
 export const APP_CONFIG = {
   defaultRoute: "route-001",
   routeBasePath: "/data/routes",
+  routeIndexPath: "/data/route-index.json",
   observationChecksPath: "/data/observation-checks.json",
   observationTypesPath: "/data/observation-types.json",
   criticalViolationsPath: "/data/critical-violations.json",
 };
-
-export const AVAILABLE_ROUTES = Object.freeze([
-  { id: "route-001", name: "Demo Route 1" },
-  { id: "route-002", name: "Demo Route 2" },
-]);
 
 export const EXAM_START_NOTICE = Object.freeze({
   title: "Before the test",
@@ -99,6 +95,30 @@ export function loadObservationTypes() {
 
 export function loadCriticalViolations() {
   return loadJson(APP_CONFIG.criticalViolationsPath, "critical violations");
+}
+
+export async function loadAvailableRoutes() {
+  const routes = await loadJson(APP_CONFIG.routeIndexPath, "route index");
+
+  if (
+    !Array.isArray(routes) ||
+    routes.length === 0 ||
+    routes.some((route) =>
+      typeof route?.id !== "string" ||
+      !route.id ||
+      typeof route.name !== "string" ||
+      !route.name.trim()
+    )
+  ) {
+    throw new Error("The route index is invalid.");
+  }
+
+  return [...routes].sort((left, right) =>
+    left.name.localeCompare(right.name, "en", {
+      sensitivity: "base",
+      numeric: true,
+    }) || left.id.localeCompare(right.id, "en", { numeric: true })
+  );
 }
 
 export function getInitialState(route) {
