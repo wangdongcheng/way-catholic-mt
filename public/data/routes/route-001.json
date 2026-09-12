@@ -64,8 +64,8 @@
     {
       "id": "examiner-command-002",
       "type": "examiner-command",
-      "lat": 35.8889359,
-      "lng": 14.5032415,
+      "lat": 35.8891213,
+      "lng": 14.5034454,
       "radius": 20,
       "answerRadius": 60,
       "command": "Select all checks required before changing direction.",
