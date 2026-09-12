@@ -175,6 +175,11 @@ function observationFields(event) {
           "practiceMessageText",
           messageText(event.practiceMessage)
         )}
+        <label class="correct-control">
+          <input type="checkbox" data-field="practiceMessageModal"
+            ${event.practiceMessage?.modal === true ? "checked" : ""} />
+          Modal (require OK)
+        </label>
       </div>
     </section>
 
@@ -558,6 +563,11 @@ export function createEventForm({ container, title, store }) {
           event.practiceMessage = {
             ...(event.practiceMessage || {}),
             message: target.value,
+          };
+        } else if (field === "practiceMessageModal") {
+          event.practiceMessage = {
+            ...(event.practiceMessage || {}),
+            modal: target.checked,
           };
         } else if (numericFields.has(field)) {
           if (target.value === "" && field.startsWith("heading")) {

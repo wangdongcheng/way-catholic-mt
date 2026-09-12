@@ -342,10 +342,14 @@ async function initApp() {
     mode,
     streetViewService: streetView.streetViewService,
     panorama,
-    onPracticeMessage: (message) => showRouteMessage(message, {
-      modal: false,
-      autoCloseMs: EVENT_MESSAGE_AUTO_CLOSE_MS,
-    }),
+    onPracticeMessage: (message) => {
+      const modal = message?.modal === true;
+
+      showRouteMessage(message, {
+        modal,
+        autoCloseMs: modal ? 0 : EVENT_MESSAGE_AUTO_CLOSE_MS,
+      });
+    },
     onAcknowledged: (event) => {
       recordResult({
         eventId: event.id,
