@@ -20,21 +20,21 @@
           "lat": 35.8884924,
           "lng": 14.5032812
         },
-        "radius": 10,
+        "radius": 30,
         "pano": null
       },
       "forbiddenDestination": {
         "location": {
-          "lat": 35.8889935,
-          "lng": 14.5030559
+          "lat": 35.8890271,
+          "lng": 14.5029594
         },
-        "radius": 10,
+        "radius": 7,
         "pano": null
       },
       "windowMs": 30000,
       "practiceWarning": {
         "title": "Serious driving error",
-        "message": "A critical driving violation was detected.",
+        "message": "NO ENTRY!",
         "buttonLabel": "I understand",
         "autoCloseMs": 0
       },
