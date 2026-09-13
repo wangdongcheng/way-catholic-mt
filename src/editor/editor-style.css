@@ -162,6 +162,15 @@ h1 {
   background: #f1f5f9;
 }
 
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.button:disabled:hover {
+  background: white;
+}
+
 .button.primary {
   border-color: #1d4ed8;
   background: #2563eb;

@@ -87,6 +87,19 @@ function commonFields(event) {
   `;
 }
 
+function faultFields(event) {
+  return `
+    <section class="form-section">
+      <h3>Fault classification</h3>
+      <label class="correct-control">
+        <input type="checkbox" data-field="grievousFault"
+          ${event.grievousFault ? "checked" : ""} />
+        Grievous fault
+      </label>
+    </section>
+  `;
+}
+
 function checkpointFields(event, route) {
   const defaultPenalty = route.navigation.defaultPenaltyOnMiss;
 
@@ -175,6 +188,11 @@ function observationFields(event) {
           "practiceMessageText",
           messageText(event.practiceMessage)
         )}
+        <label class="correct-control">
+          <input type="checkbox" data-field="practiceMessageModal"
+            ${event.practiceMessage?.modal === true ? "checked" : ""} />
+          Modal (require OK)
+        </label>
       </div>
     </section>
 
@@ -448,6 +466,7 @@ export function createEventForm({ container, title, store }) {
 
     container.innerHTML = `
       ${isObservation || isCritical ? "" : routeNavigationFields(state.route)}
+      ${faultFields(event)}
       ${isCritical ? criticalViolationFields(event) : commonFields(event)}
       ${isObservation || isCritical ? "" : checkpointFields(event, state.route)}
       ${isObservation
@@ -535,7 +554,11 @@ export function createEventForm({ container, title, store }) {
 
         if (field === "required") {
           event.required = target.checked;
-        } else if (field === "enabled" || field === "examEnabled") {
+        } else if (
+          field === "enabled" ||
+          field === "examEnabled" ||
+          field === "grievousFault"
+        ) {
           event[field] = target.checked;
         } else if (field === "answerMode") {
           normalizeAnswerMode(event, target.value);
@@ -558,6 +581,11 @@ export function createEventForm({ container, title, store }) {
           event.practiceMessage = {
             ...(event.practiceMessage || {}),
             message: target.value,
+          };
+        } else if (field === "practiceMessageModal") {
+          event.practiceMessage = {
+            ...(event.practiceMessage || {}),
+            modal: target.checked,
           };
         } else if (numericFields.has(field)) {
           if (target.value === "" && field.startsWith("heading")) {

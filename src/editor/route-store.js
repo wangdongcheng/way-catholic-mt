@@ -112,6 +112,14 @@ export function createRouteStore() {
     emit();
   }
 
+  function markSaved() {
+    state = {
+      ...state,
+      dirty: false,
+    };
+    emit();
+  }
+
   function subscribe(listener) {
     listeners.add(listener);
     return () => listeners.delete(listener);
@@ -126,6 +134,7 @@ export function createRouteStore() {
     updateEvent,
     mutateEvent,
     removeEvent,
+    markSaved,
     subscribe,
   };
 }

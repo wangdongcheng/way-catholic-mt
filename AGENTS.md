@@ -12,29 +12,27 @@ This file defines the working rules for AI coding agents in the entire repositor
 ## Authorization Gate
 
 - Analysis, explanation, design, review, and read-only inspection do not authorize code changes.
-- Modify repository files only when the user's current request contains either `push to preview` or `commit to preview` as an operative instruction.
-- `push to preview` authorizes the requested changes, a local commit on `preview`, and a push to the remote `preview` branch.
-- `commit to preview` authorizes the requested changes and a local commit on `preview`, but it does not authorize a push.
-- Both phrases are case-sensitive and must be spelled exactly. Similar wording, translations, partial phrases, or quoted examples do not grant authorization.
-- Do not reuse authorization from an earlier request for a later task.
-- When authorization is absent, provide a design or diagnosis without changing repository files.
+- An explicit request to implement, update, fix, add, or remove repository content authorizes scoped file edits.
+- Do not commit unless the current request contains `commit to preview` or `push to preview` as an operative instruction.
+- Do not push unless the current request contains `push to preview` as an operative instruction.
+- Commit and push phrases are case-sensitive and must be spelled exactly. Similar wording, translations, partial phrases, or quoted examples do not grant that action.
+- Commit and push authorization applies only to the current request.
+- When the user does not clearly request a repository change, keep the task read-only.
 
 ## Git and Push Rules
 
 - Never push directly to `main`.
 - The only branch an agent may push to is `preview`.
-- Push only when the current user request contains the exact operative phrase `push to preview`.
-- When the current request contains the exact operative phrase `commit to preview`, commit the requested changes locally on `preview` and do not push them.
 - Do not create or push another branch unless the user explicitly changes these rules.
 - Never force-push.
-- Before writing to `preview`, fetch or verify its current remote head and preserve all newer remote changes.
-- If `preview` moves during the task, inspect the new commits and safely rebase or rebuild the change on the latest head. Do not overwrite concurrent work.
+- Before a local commit, confirm that the current branch is `preview`. A network fetch is not required unless remote synchronization is needed.
+- Before pushing, fetch `origin/preview` and preserve all newer remote changes.
+- If `origin/preview` moves during a push workflow, inspect the new commits and safely rebase or rebuild the change on the latest head. Do not overwrite concurrent work.
 - Preserve unrelated user changes in a dirty worktree. Never reset, discard, or rewrite them.
 - Keep each commit focused on the requested task.
 - Commit messages must be entirely in English, including the subject and body.
 - Prefix AI-authored commit subjects with `ChatGPT: `.
 - Example: `ChatGPT: Add observation checkpoint feedback`.
-- Commit only when the current request contains one of the two authorized phrases. Push only when it contains `push to preview`.
 
 ## Scope Discipline
 
@@ -47,7 +45,6 @@ This file defines the working rules for AI coding agents in the entire repositor
 
 ## Language and Style
 
-- Write all commit messages in English.
 - Write all comments in source code and code snippets in English.
 - Keep identifiers, validation messages, UI strings, and documentation consistent with the existing language of the surrounding file.
 - Prefer readable modules with explicit state and centralized defaults over duplicated inline logic.
@@ -55,7 +52,7 @@ This file defines the working rules for AI coding agents in the entire repositor
 
 ## Architecture Boundaries
 
-- Keep the Route Editor isolated in `editor.html` and `src/editor/` so it can be changed or rolled back independently from the driving runtime.
+- Keep Route Editor UI and editor-specific logic in `editor.html` and `src/editor/`. Shared data contracts, indexes, and build tooling may live in shared modules, `public/data/`, or `scripts/` when both the editor and driving runtime use them.
 - Keep runtime orchestration in `src/main.js`; put reusable state and detection logic in dedicated modules.
 - Continue using `src/spatial-index.js` for proximity candidate lookup. Do not replace it with full scans without a measured reason.
 - Treat Street View `pano` values as optional unless a feature specifically requires an exact panorama match.
@@ -94,22 +91,20 @@ This file defines the working rules for AI coding agents in the entire repositor
 
 ## Verification
 
-Run the checks relevant to the changed files before any authorized commit or push:
+Before a commit or push, run only the checks relevant to the changed files:
 
-1. Run `git diff --check`.
-2. Run `node --check` for changed JavaScript files.
-3. Parse every changed JSON file and run the applicable route/editor validation.
-4. Run `npm run build`; use the offline form when the environment attempts an unnecessary network request.
-5. Run targeted behavior tests for changed state machines or event logic.
-6. Review the final file list and confirm that only requested files are included in the commit.
-7. Verify the remote `preview` SHA and commit title after pushing.
+- Always run `git diff --check` and review the final file list.
+- Run `node --check` for changed JavaScript files.
+- Parse changed JSON files and run the applicable route/editor validation.
+- Run `npm run build` when JavaScript, HTML, CSS, dependencies, or build/deployment configuration changed. Skip it for documentation-only and data-only changes unless they affect generated or bundled output.
+- Run targeted behavior tests when state-machine or event logic changed.
+- After pushing, verify the remote `preview` SHA and commit title.
 
 If a relevant check cannot run, report that clearly instead of claiming full verification.
 
 ## Completion Report
 
-- State what changed and which files were affected.
-- State which verification commands passed or could not run.
+- For implementation tasks, state what changed, which files were affected, and which relevant checks passed or could not run.
 - If a push was authorized, confirm that only `preview` changed and provide the commit link.
 - If `commit to preview` was authorized, provide the local commit SHA and title and explicitly state that it was not pushed.
-- If neither phrase was authorized, explicitly state that no repository files were changed.
+- If the user requested an implementation but it was not performed, state that no repository files were changed and explain why. Ordinary read-only answers do not need this boilerplate.

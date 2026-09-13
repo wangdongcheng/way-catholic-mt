@@ -12,6 +12,7 @@
     {
       "id": "critical-violation-001",
       "type": "critical-violation",
+      "grievousFault": false,
       "rule": "wrong-way-entry",
       "enabled": true,
       "oncePerSession": true,

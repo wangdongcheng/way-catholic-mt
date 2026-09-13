@@ -97,7 +97,7 @@ export async function createEditorMap({
     zoom: 16,
     mapId: "DEMO_MAP_ID",
     streetViewControl: true,
-    mapTypeControl: false,
+    mapTypeControl: true,
     fullscreenControl: false,
     clickableIcons: false,
   });

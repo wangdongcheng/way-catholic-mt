@@ -39,6 +39,16 @@ function validateUniqueIds(events, issues) {
   }
 }
 
+function validateGrievousFault(event, issues) {
+  if (typeof event.grievousFault !== "boolean") {
+    issues.push(issue(
+      "error",
+      "Grievous fault must be true or false.",
+      event.id || null
+    ));
+  }
+}
+
 function validateObservationDocument(document) {
   const issues = validateDocumentHeader(document, "observation-checks");
   const events = Array.isArray(document.events) ? document.events : [];
@@ -46,6 +56,7 @@ function validateObservationDocument(document) {
 
   for (const event of events) {
     const eventId = event.id || null;
+    validateGrievousFault(event, issues);
     if (event.type !== "observation-check") {
       issues.push(issue("error", "Only observation-check events are allowed.", eventId));
     }
@@ -128,6 +139,7 @@ function validateCriticalDocument(document) {
 
   for (const event of events) {
     const eventId = event.id || null;
+    validateGrievousFault(event, issues);
     const trigger = event.triggerCheckpoint;
     const forbidden = event.forbiddenDestination;
     const triggerLocation = trigger?.location;
@@ -261,6 +273,7 @@ export function validateRoute(route) {
 
   for (const event of route.events) {
     const eventId = event.id || null;
+    validateGrievousFault(event, issues);
 
     if (!eventId) {
       issues.push(issue("error", "Every event requires an ID."));
