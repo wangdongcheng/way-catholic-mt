@@ -3,7 +3,7 @@ MSPSL routine is a five-step driving method used to safely approach and navigate
 Mirror, Signal, Manoeuvre (MSM) 
 
 
-20260912
+# 20260912 潜在的可能问题
 
 有。主要问题集中在**事件同时触发、扣分结算、暂停/重启，以及编辑器与运行时规则不一致**。
 
