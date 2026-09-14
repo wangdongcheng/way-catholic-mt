@@ -35,6 +35,15 @@ function getStartPosition(route) {
     : null;
 }
 
+function createLetterMarkerContent(className, text) {
+  const content = document.createElement("div");
+  content.className = className;
+  const label = document.createElement("span");
+  label.textContent = text;
+  content.append(label);
+  return content;
+}
+
 function offsetPoint(center, distanceMeters, bearingDegrees) {
   const earthRadius = 6371000;
   const bearing = bearingDegrees * Math.PI / 180;
@@ -170,17 +179,11 @@ export async function createEditorMap({
     const start = getStartPosition(route);
 
     if (start) {
-      const content = document.createElement("div");
-      content.className = "editor-start-marker";
-      const label = document.createElement("span");
-      label.textContent = "S";
-      content.append(label);
-
       const marker = new AdvancedMarkerElement({
         map,
         position: start,
         title: "Route start",
-        content,
+        content: createLetterMarkerContent("editor-start-marker", "S"),
         zIndex: 30,
       });
       overlays.push(marker);
@@ -277,6 +280,9 @@ export async function createEditorMap({
         title: `${event.id} · ${event.type}`,
         gmpDraggable: true,
         zIndex: selected ? 20 : 10,
+        content: event.type === "route-finish"
+          ? createLetterMarkerContent("editor-finish-marker", "E")
+          : undefined,
       });
       marker.addListener("click", () => onSelect(event.id));
       marker.addListener("dragend", () => {
