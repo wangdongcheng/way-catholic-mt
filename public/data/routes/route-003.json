@@ -1,0 +1,27 @@
+{
+  "id": "route-003",
+  "name": "Route 3",
+  "startState": {
+    "lat": 35.8880832,
+    "lng": 14.5029997,
+    "heading": 24,
+    "pitch": 0,
+    "zoom": 1
+  },
+  "events": [
+    {
+      "id": "route-finish-001",
+      "type": "route-finish",
+      "lat": 35.8901142,
+      "lng": 14.5048543,
+      "radius": 20,
+      "pano": null,
+      "required": true,
+      "penaltyOnMiss": 0
+    }
+  ],
+  "navigation": {
+    "eventsAreCheckpoints": false,
+    "defaultPenaltyOnMiss": 0
+  }
+}
