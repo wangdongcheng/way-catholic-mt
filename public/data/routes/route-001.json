@@ -113,11 +113,50 @@
       "penaltyOnMiss": 5
     },
     {
+      "id": "examiner-command-003",
+      "type": "examiner-command",
+      "grievousFault": false,
+      "lat": 35.8899045,
+      "lng": 14.5039009,
+      "radius": 25,
+      "required": false,
+      "penaltyOnMiss": 5,
+      "answerRadius": 52,
+      "command": "Follow the current direction.",
+      "answerMode": "single",
+      "optionLayout": "single-column",
+      "options": [
+        {
+          "id": "option-1",
+          "label": "Take left lane",
+          "correct": true,
+          "penalty": 0,
+          "routeMessage": {
+            "message": "Correct!",
+            "priority": "high"
+          }
+        },
+        {
+          "id": "option-2",
+          "label": "Take right lane",
+          "correct": false,
+          "penalty": 1
+        }
+      ],
+      "penaltyOnOutOfRange": 1,
+      "outOfRangeRouteMessage": {
+        "message": "You left the answering area without answering. 1 point deducted.",
+        "priority": "high"
+      },
+      "headingMin": 340,
+      "headingMax": 50
+    },
+    {
       "id": "route-001-finish",
       "type": "route-finish",
-      "lat": 35.8897667,
-      "lng": 14.5038232,
-      "radius": 20,
+      "lat": 35.8906301,
+      "lng": 14.5031901,
+      "radius": 26,
       "pano": null,
       "required": true,
       "penaltyOnMiss": 0
