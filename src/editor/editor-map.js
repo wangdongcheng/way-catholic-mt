@@ -18,6 +18,23 @@ const COLORS = {
   heading: "#7c3aed",
 };
 
+const DEFAULT_START_POSITION = Object.freeze({
+  lat: 35.8880832,
+  lng: 14.5029997,
+});
+
+function getStartPosition(route) {
+  const start = route?.startState;
+
+  if (Number.isFinite(start?.lat) && Number.isFinite(start?.lng)) {
+    return { lat: start.lat, lng: start.lng };
+  }
+
+  return route?.type === "critical-violations"
+    ? DEFAULT_START_POSITION
+    : null;
+}
+
 function offsetPoint(center, distanceMeters, bearingDegrees) {
   const earthRadius = 6371000;
   const bearing = bearingDegrees * Math.PI / 180;
@@ -94,7 +111,7 @@ export async function createEditorMap({
   const { AdvancedMarkerElement } = await importLibrary("marker");
 
   const map = new GoogleMap(container, {
-    center: { lat: 35.8880832, lng: 14.5029997 },
+    center: DEFAULT_START_POSITION,
     zoom: 16,
     mapId: "DEMO_MAP_ID",
     streetViewControl: true,
@@ -149,6 +166,25 @@ export async function createEditorMap({
 
   function sync(route, selectedEventId, issuesByEvent) {
     clearOverlays();
+
+    const start = getStartPosition(route);
+
+    if (start) {
+      const content = document.createElement("div");
+      content.className = "editor-start-marker";
+      const label = document.createElement("span");
+      label.textContent = "S";
+      content.append(label);
+
+      const marker = new AdvancedMarkerElement({
+        map,
+        position: start,
+        title: "Route start",
+        content,
+        zIndex: 30,
+      });
+      overlays.push(marker);
+    }
 
     for (const event of route?.events || []) {
       const invalid = issuesByEvent.has(event.id);
@@ -304,10 +340,10 @@ export async function createEditorMap({
   }
 
   function focusRoute(route) {
-    const start = route?.startState;
+    const start = getStartPosition(route);
 
-    if (Number.isFinite(start?.lat) && Number.isFinite(start?.lng)) {
-      map.setCenter({ lat: start.lat, lng: start.lng });
+    if (start) {
+      map.setCenter(start);
       map.setZoom(16);
       return;
     }
