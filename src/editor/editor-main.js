@@ -189,7 +189,6 @@ function createEvent(type, position) {
     store.addEvent({
       id: uniqueEventId(route, "critical-violation"),
       type: "critical-violation",
-      grievousFault: false,
       rule: "wrong-way-entry",
       enabled: true,
       oncePerSession: true,
@@ -261,6 +260,24 @@ function createEvent(type, position) {
     return;
   }
 
+  if (type === "route-finish" && documentKind === "exam") {
+    if (route.events.some((event) => event.type === "route-finish")) {
+      showToast("This route already has a finish event");
+      return;
+    }
+
+    store.addEvent({
+      id: uniqueEventId(route, "route-finish"),
+      type: "route-finish",
+      lat: Number(position.lat.toFixed(7)),
+      lng: Number(position.lng.toFixed(7)),
+      radius: 20,
+      pano: null,
+    });
+    showToast("Route finish added");
+    return;
+  }
+
   if (documentKind !== "exam" || !["single", "multiple", "sequence"].includes(type)) {
     showToast("This event type belongs in a different data set");
     return;
@@ -316,7 +333,7 @@ function createEvent(type, position) {
     };
   }
 
-  store.addEvent(event);
+  store.addEvent(event, { beforeType: "route-finish" });
   showToast("Examiner command added");
 }
 

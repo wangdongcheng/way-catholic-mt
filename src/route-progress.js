@@ -44,6 +44,13 @@ export function createRouteProgressTracker({
     return state ? { ...state } : null;
   }
 
+  function getProgress() {
+    return events.map((event) => ({
+      eventId: event.id,
+      ...getEventState(event.id),
+    }));
+  }
+
   function compareEventOrder(leftEventId, rightEventId) {
     return (
       eventIndexes.get(leftEventId) -
@@ -133,6 +140,7 @@ export function createRouteProgressTracker({
     canTriggerContent,
     compareEventOrder,
     getEventState,
+    getProgress,
     markContentTriggered,
     markReached,
     reset,

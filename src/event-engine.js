@@ -108,6 +108,10 @@ export function createEventEngine({
       return false;
     }
 
+    if (event.type === "route-finish") {
+      return true;
+    }
+
     const heading = panorama.getPov()?.heading;
     const hasHeadingRange =
       Number.isFinite(event.headingMin) &&
@@ -165,6 +169,7 @@ export function createEventEngine({
   }
 
   return {
+    getProgress: routeProgress.getProgress,
     initialize,
     refreshAndCheck,
     checkNearbyEvents,

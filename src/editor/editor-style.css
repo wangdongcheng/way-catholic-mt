@@ -256,6 +256,10 @@ h1 {
   background: #f97316;
 }
 
+.legend-dot.finish {
+  background: #22c55e;
+}
+
 .legend-dot.critical {
   background: #dc2626;
 }

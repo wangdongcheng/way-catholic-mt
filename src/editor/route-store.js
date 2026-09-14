@@ -49,12 +49,23 @@ export function createRouteStore() {
     emit();
   }
 
-  function addEvent(event) {
+  function addEvent(event, { beforeType = null } = {}) {
+    const events = [...(state.route.events || [])];
+    const insertionIndex = beforeType
+      ? events.findIndex((item) => item.type === beforeType)
+      : -1;
+
+    if (insertionIndex === -1) {
+      events.push(clone(event));
+    } else {
+      events.splice(insertionIndex, 0, clone(event));
+    }
+
     state = {
       ...state,
       route: {
         ...state.route,
-        events: [...(state.route.events || []), clone(event)],
+        events,
       },
       selectedEventId: event.id,
       dirty: true,

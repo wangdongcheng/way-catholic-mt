@@ -463,19 +463,24 @@ export function createEventForm({ container, title, store }) {
     const documentType = state.route.type;
     const isObservation = documentType === "observation-checks";
     const isCritical = documentType === "critical-violations";
+    const isFinish = event.type === "route-finish";
 
     container.innerHTML = `
       ${isObservation || isCritical ? "" : routeNavigationFields(state.route)}
-      ${faultFields(event)}
+      ${isCritical || isFinish ? "" : faultFields(event)}
       ${isCritical ? criticalViolationFields(event) : commonFields(event)}
-      ${isObservation || isCritical ? "" : checkpointFields(event, state.route)}
+      ${isObservation || isCritical || isFinish
+        ? ""
+        : checkpointFields(event, state.route)}
       ${isObservation
         ? observationFields(event)
         : isCritical
           ? ""
-          : event.type === "route-message"
-            ? routeMessageFields(event)
-            : commandFields(event)}
+          : isFinish
+            ? ""
+            : event.type === "route-message"
+              ? routeMessageFields(event)
+              : commandFields(event)}
       <section class="form-section danger-zone">
         <button class="button danger" type="button" data-action="delete-event">
           Delete event

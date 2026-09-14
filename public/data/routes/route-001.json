@@ -111,6 +111,16 @@
       },
       "required": true,
       "penaltyOnMiss": 5
+    },
+    {
+      "id": "route-001-finish",
+      "type": "route-finish",
+      "lat": 35.8897667,
+      "lng": 14.5038232,
+      "radius": 20,
+      "pano": null,
+      "required": true,
+      "penaltyOnMiss": 0
     }
   ],
   "navigation": {

@@ -243,7 +243,7 @@ URL: /?route=route-003
 | `name`       | string | Human-readable route name displayed by the application and Editor. |
 | `startState` | object | Initial Street View position and camera state.                     |
 | `navigation` | object | Route-level checkpoint and missed-event defaults.                  |
-| `events`     |  array | Ordered list of examiner commands used in Exam mode.                |
+| `events`     |  array | Ordered route events ending with one `route-finish` event.          |
 
 ## Start State
 
@@ -335,6 +335,27 @@ triggered
 suppressed
 ```
 
+## Route Finish
+
+Every route must contain exactly one `route-finish` event, and it must be the
+last item in the ordered `events` array.
+
+```json
+{
+  "id": "route-001-finish",
+  "type": "route-finish",
+  "lat": 35.8897667,
+  "lng": 14.5038232,
+  "radius": 20,
+  "pano": null
+}
+```
+
+Reaching this location settles earlier route checkpoints, outstanding examiner
+commands, and active observation checks before producing the Exam Result. A
+route finish is always treated as a required checkpoint with no missed-event
+penalty. Heading restrictions do not apply to it.
+
 ## Common Event Properties
 
 Examiner commands and observation checks share these location properties:
@@ -367,6 +388,10 @@ Examiner commands and observation checks share these location properties:
 | `required`           |        boolean | Whether missing the event should be recorded and penalized.          |
 | `penaltyOnMiss`      |         number | Penalty applied when this required event is missed.                  |
 | `missedRouteMessage` | message object | Optional event-specific message displayed when this event is missed. |
+
+Examiner commands and observation checks also require a boolean
+`grievousFault` value. When a grievous event fails, the final Exam Result is
+`Failed` regardless of the remaining score. It does not end the exam early.
 
 An event must provide either:
 
@@ -443,6 +468,9 @@ Set `examEnabled` to `false` for a teaching point that should appear in Practice
 
 Global critical violations are stored in `public/data/critical-violations.json`. A violation is armed when the driver reaches checkpoint A. Reaching forbidden destination B before `windowMs` expires triggers a red Practice warning or immediately fails an Exam.
 
+Every critical violation is inherently grievous, so critical-violation events
+do not use a `grievousFault` field.
+
 ```json
 {
   "id": "critical-wrong-way-001",
@@ -474,6 +502,20 @@ Global critical violations are stored in `public/data/critical-violations.json`.
   }
 }
 ```
+
+## Exam Result
+
+Reaching `route-finish` ends a normal exam and opens a result report. The score
+starts at 100 and cannot fall below zero:
+
+```text
+score = max(0, 100 - totalPenalty)
+```
+
+The pass score is 75. The result is `Failed` when the score is below 75, a
+grievous event failed, or a critical violation occurred. The report includes
+the route, duration, total penalty, command and observation performance, missed
+route points, critical violations, and a review of failed events.
 
 ## Examiner Command Events
 
@@ -695,9 +737,12 @@ git push
 
 ## Maintaining Event Order
 
-New events are appended to the end of the `events` array.
+The Route Editor keeps `route-finish` last. New examiner commands are inserted
+immediately before it.
 
 Because array order defines route progress, inspect the exported JSON and ensure events appear in the actual driving order.
+
+Each route must contain exactly one `route-finish` event as its final item.
 
 The current Editor does not provide drag-and-drop event reordering. If necessary, reorder the event objects manually in the JSON file before committing it.
 

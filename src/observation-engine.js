@@ -276,6 +276,32 @@ export function createObservationEngine({
     return [matched.id];
   }
 
+  function finalize() {
+    if (mode !== "exam") {
+      return;
+    }
+
+    const position = panorama.getPosition();
+
+    for (const event of events) {
+      const status = states.get(event.id);
+
+      if (status === OBSERVATION_STATUS.ACTIVE) {
+        states.set(event.id, OBSERVATION_STATUS.MISSED);
+        onMissed(event, {
+          distance: position ? distanceTo(event, position) : Infinity,
+          penalty: Number(event.penaltyOnMiss) || 0,
+        });
+      } else if (status === OBSERVATION_STATUS.ACKNOWLEDGED) {
+        states.set(event.id, OBSERVATION_STATUS.COMPLETED);
+      }
+    }
+
+    remainingAttempts = 0;
+    notifyVisibilityChange();
+    notifyDebugStateChange(position);
+  }
+
   async function initialize() {
     await Promise.all(events.map(resolvePosition));
     checkNearbyEvents();
@@ -286,6 +312,7 @@ export function createObservationEngine({
   return {
     acknowledge,
     checkNearbyEvents,
+    finalize,
     initialize,
     reset,
   };

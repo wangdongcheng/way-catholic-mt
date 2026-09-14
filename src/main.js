@@ -15,6 +15,7 @@ import {
 import { createEventEngine } from "./event-engine.js";
 import { createObservationEngine } from "./observation-engine.js";
 import { createCriticalViolationEngine } from "./critical-violation-engine.js";
+import { createExamResult } from "./exam-result.js";
 import {
   createStreetView,
   restartStreetView,
@@ -28,6 +29,7 @@ import {
   getExaminerSelection,
   hideCurrentInfo,
   hideExamFailure,
+  hideExamResult,
   hideExaminerCommand,
   hideExamStart,
   hideModeSelection,
@@ -37,6 +39,7 @@ import {
   showExaminerCommand,
   showExaminerFeedback,
   showExamFailure,
+  showExamResult,
   showExamStart,
   showInfoTemporarily,
   showModeSelection,
@@ -56,6 +59,9 @@ let results = [];
 let totalPenalty = 0;
 let panorama = null;
 let driveStarted = false;
+let examStartedAt = null;
+let examCompleted = false;
+let finishScheduled = false;
 const currentEventDebug = {
   examinerCommands: [],
   observations: [],
@@ -140,9 +146,14 @@ function getAnswerMessage(event, selectedIds, isCorrect) {
 }
 
 function recordResult(result) {
-  results.push(result);
-  totalPenalty += result.penalty;
+  const penalty = Number(result.penalty) || 0;
+  results.push({ ...result, penalty });
+  totalPenalty += penalty;
   updatePenaltyScore(totalPenalty);
+}
+
+function getCommandLabel(event) {
+  return event.command || event.id || "Examiner command";
 }
 
 function showNextCommand() {
@@ -158,12 +169,15 @@ function showNextCommand() {
     const answerRadius = Number.isFinite(next.event.answerRadius)
       ? next.event.answerRadius
       : next.event.radius;
+    const distance = currentPosition
+      ? calculateDistanceMeters(currentPosition, next.targetPosition)
+      : null;
 
     if (
-      currentPosition &&
-      calculateDistanceMeters(currentPosition, next.targetPosition) >
-        answerRadius
+      Number.isFinite(distance) &&
+      distance > answerRadius
     ) {
+      recordUnansweredCommand(next, distance);
       continue;
     }
 
@@ -194,11 +208,14 @@ function completeActiveCommand(selectedIds) {
 
   recordResult({
     eventId: event.id,
+    eventType: event.type,
+    label: getCommandLabel(event),
     status: "answered",
     answerMode: event.answerMode,
     selectedOptionIds: [...selectedIds],
     correct,
     penalty,
+    grievousFault: event.grievousFault === true,
     answeredAt: Date.now(),
   });
 
@@ -212,6 +229,30 @@ function completeActiveCommand(selectedIds) {
   showNextCommand();
 }
 
+function recordUnansweredCommand(command, distance = null) {
+  const { event } = command;
+  const penalty = Number(event.penaltyOnOutOfRange) || 0;
+  const selectedOptionIds = command === activeCommand
+    ? getExaminerSelection()
+    : [];
+
+  recordResult({
+    eventId: event.id,
+    eventType: event.type,
+    label: getCommandLabel(event),
+    status: "out-of-range",
+    answerMode: event.answerMode,
+    selectedOptionIds,
+    correct: false,
+    penalty,
+    grievousFault: event.grievousFault === true,
+    ...(Number.isFinite(distance)
+      ? { distanceFromTarget: Number(distance.toFixed(1)) }
+      : {}),
+    answeredAt: null,
+  });
+}
+
 function expireActiveCommand(distance) {
   if (!activeCommand) {
     return;
@@ -219,18 +260,7 @@ function expireActiveCommand(distance) {
 
   const { event } = activeCommand;
   const penalty = Number(event.penaltyOnOutOfRange) || 0;
-  const selectedOptionIds = getExaminerSelection();
-
-  recordResult({
-    eventId: event.id,
-    status: "out-of-range",
-    answerMode: event.answerMode,
-    selectedOptionIds,
-    correct: false,
-    penalty,
-    distanceFromTarget: Number(distance.toFixed(1)),
-    answeredAt: null,
-  });
+  recordUnansweredCommand(activeCommand, distance);
 
   activeCommand = null;
   hideExaminerCommand();
@@ -270,7 +300,12 @@ function checkActiveCommandRange() {
   }
 }
 
-function handleRouteEvent(event, targetPosition) {
+function handleRouteEvent(event, targetPosition, onFinish) {
+  if (event.type === "route-finish") {
+    onFinish();
+    return;
+  }
+
   if (event.type === "route-message" || event.type === "message") {
     showRouteMessage(event);
     return;
@@ -318,7 +353,11 @@ async function initApp() {
     panorama,
     onEvent: mode === "practice"
       ? (event) => showRouteMessage(event)
-      : handleRouteEvent,
+      : (event, targetPosition) => handleRouteEvent(
+          event,
+          targetPosition,
+          requestExamCompletion
+        ),
     onMissedEvent: (event, { penalty, skippedByEventId }) => {
       if (mode !== "exam") {
         return;
@@ -326,8 +365,12 @@ async function initApp() {
 
       recordResult({
         eventId: event.id,
+        eventType: event.type,
+        label: getCommandLabel(event),
         status: "missed",
+        correct: false,
         penalty,
+        grievousFault: event.grievousFault === true,
         skippedByEventId,
         answeredAt: null,
       });
@@ -360,9 +403,12 @@ async function initApp() {
     onAcknowledged: (event) => {
       recordResult({
         eventId: event.id,
+        eventType: event.type,
+        label: event.observationType || event.id,
         status: "observation-acknowledged",
         correct: true,
         penalty: 0,
+        grievousFault: event.grievousFault === true,
         answeredAt: Date.now(),
       });
       showExaminerFeedback(
@@ -373,9 +419,12 @@ async function initApp() {
     onMissed: (event, { distance, penalty }) => {
       recordResult({
         eventId: event.id,
+        eventType: event.type,
+        label: event.observationType || event.id,
         status: "observation-missed",
         correct: false,
         penalty,
+        grievousFault: event.grievousFault === true,
         distanceFromTarget: Number(distance.toFixed(1)),
         answeredAt: null,
       });
@@ -385,13 +434,21 @@ async function initApp() {
       );
     },
     onIncorrect: ({ observationType, activeEventIds, penalty }) => {
+      const activeEvents = observationDocument.events.filter((event) =>
+        activeEventIds.includes(event.id)
+      );
       recordResult({
         eventId: activeEventIds[0] || null,
+        eventType: "observation-check",
+        label: observationType || "Observation",
         status: "observation-incorrect",
         observationType,
         activeEventIds,
         correct: false,
         penalty,
+        grievousFault: activeEvents.some((event) =>
+          event.grievousFault === true
+        ),
         answeredAt: Date.now(),
       });
       showExaminerFeedback(
@@ -417,6 +474,73 @@ async function initApp() {
   });
   let eventEngineInitialized = false;
   let observationEngineInitialized = false;
+
+  function settleOutstandingCommands() {
+    if (activeCommand) {
+      recordUnansweredCommand(activeCommand);
+    }
+
+    for (const command of commandQueue) {
+      recordUnansweredCommand(command);
+    }
+
+    activeCommand = null;
+    commandQueue = [];
+    hideExaminerCommand();
+    syncExaminerEventDebug();
+  }
+
+  function stopExamDrive() {
+    driveStarted = false;
+    setLocationUpdatesEnabled(false);
+    hideExaminerCommand();
+    hideObservationToolbar();
+    clearExaminerFeedback();
+    clearRouteMessages();
+    hideCurrentInfo();
+    setStreetViewLocked(panorama, true);
+    document.body.dataset.mode = "result";
+  }
+
+  function completeExam({ settlePending = true } = {}) {
+    if (mode !== "exam" || examCompleted) {
+      return;
+    }
+
+    examCompleted = true;
+    finishScheduled = false;
+
+    if (settlePending) {
+      settleOutstandingCommands();
+      observationEngine.finalize();
+    } else {
+      activeCommand = null;
+      commandQueue = [];
+      syncExaminerEventDebug();
+    }
+
+    stopExamDrive();
+    const examResult = createExamResult({
+      route,
+      results,
+      totalPenalty,
+      routeProgress: eventEngine.getProgress(),
+      startedAt: examStartedAt,
+    });
+
+    showExamResult(examResult, {
+      onRetry: restartExam,
+      onChooseRoute: resetToModeChooser,
+    });
+  }
+
+  function requestExamCompletion() {
+    if (finishScheduled || examCompleted) {
+      return;
+    }
+
+    finishScheduled = true;
+  }
 
   const startDrive = async () => {
     if (driveStarted) {
@@ -457,9 +581,14 @@ async function initApp() {
     }
 
     criticalViolationEngine.check();
+
+    if (finishScheduled) {
+      completeExam();
+    }
   };
 
   const startExam = async () => {
+    examStartedAt = Date.now();
     await startDrive();
   };
 
@@ -505,8 +634,11 @@ async function initApp() {
     });
   };
 
-  const resetToModeChooser = () => {
+  const resetDrive = () => {
     driveStarted = false;
+    examStartedAt = null;
+    examCompleted = false;
+    finishScheduled = false;
     setLocationUpdatesEnabled(false);
     activeCommand = null;
     commandQueue = [];
@@ -519,6 +651,7 @@ async function initApp() {
     hideExaminerCommand();
     hideExamStart();
     hideExamFailure();
+    hideExamResult();
     hideObservationToolbar();
     clearExaminerFeedback();
     clearRouteMessages();
@@ -526,16 +659,31 @@ async function initApp() {
     updatePenaltyScore(0);
     setStreetViewLocked(panorama, true);
     restartStreetView(panorama, initialState);
+  };
+
+  const resetToModeChooser = () => {
+    resetDrive();
     document.body.dataset.mode = "selection";
     showModeChooser();
+  };
+
+  const restartExam = () => {
+    resetDrive();
+    document.body.dataset.mode = "exam";
+    prepareExam();
   };
 
   function handleCriticalViolation(event, details) {
     results.push({
       eventId: event.id,
+      eventType: event.type,
+      label: event.examFailure?.message || event.rule || event.id,
       status: mode === "exam" ? "failed" : "practice-warning",
+      correct: false,
       reason: event.examFailure?.reasonCode || event.rule,
       penalty: 0,
+      criticalViolation: true,
+      grievousFault: true,
       ...details,
     });
 
@@ -564,20 +712,7 @@ async function initApp() {
       return;
     }
 
-    driveStarted = false;
-    setLocationUpdatesEnabled(false);
-    activeCommand = null;
-    commandQueue = [];
-    hideExaminerCommand();
-    hideObservationToolbar();
-    clearExaminerFeedback();
-    clearRouteMessages();
-    hideCurrentInfo();
-    setStreetViewLocked(panorama, true);
-    document.body.dataset.mode = "failed";
-    showExamFailure(event.examFailure, {
-      onRestart: resetToModeChooser,
-    });
+    completeExam({ settlePending: false });
   }
 
   panorama.addListener("position_changed", () => {
@@ -592,6 +727,10 @@ async function initApp() {
     observationEngine.checkNearbyEvents();
     criticalViolationEngine.check();
     checkActiveCommandRange();
+
+    if (finishScheduled) {
+      completeExam();
+    }
   });
 
   panorama.addListener("pano_changed", () => {
@@ -604,6 +743,10 @@ async function initApp() {
     eventEngine.checkNearbyEvents();
     observationEngine.checkNearbyEvents();
     criticalViolationEngine.check();
+
+    if (finishScheduled) {
+      completeExam();
+    }
   });
 
   panorama.addListener("pov_changed", () => {

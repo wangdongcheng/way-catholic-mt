@@ -10,6 +10,7 @@ setOptions({
 const COLORS = {
   message: "#2563eb",
   command: "#f97316",
+  finish: "#22c55e",
   answer: "#eab308",
   criticalTrigger: "#f97316",
   criticalDestination: "#dc2626",
@@ -229,7 +230,9 @@ export async function createEditorMap({
       const center = { lat: event.lat, lng: event.lng };
       const baseColor = event.type === "examiner-command"
         ? COLORS.command
-        : COLORS.message;
+        : event.type === "route-finish"
+          ? COLORS.finish
+          : COLORS.message;
       const color = invalid ? COLORS.invalid : baseColor;
 
       const marker = new AdvancedMarkerElement({
