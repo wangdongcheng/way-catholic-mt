@@ -628,7 +628,6 @@ async function initApp() {
 
   const showModeChooser = () => {
     showModeSelection(availableRoutes, {
-      selectedRouteId: requestedRouteId,
       onPractice: () => navigateToMode("practice"),
       onExam: selectExamRoute,
     });

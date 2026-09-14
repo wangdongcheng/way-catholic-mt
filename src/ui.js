@@ -118,7 +118,6 @@ export function updatePenaltyScore(penalty) {
 }
 
 export function showModeSelection(routes, {
-  selectedRouteId,
   onPractice,
   onExam,
 }) {
@@ -141,9 +140,10 @@ export function showModeSelection(routes, {
     const option = document.createElement("option");
     option.value = route.id;
     option.textContent = route.name;
-    option.selected = route.id === selectedRouteId;
     routeSelect.appendChild(option);
   }
+
+  routeSelect.value = "random";
 
   choice.hidden = false;
   routeChoice.hidden = true;
