@@ -11,6 +11,17 @@ let AdvancedMarkerElement = null;
 let overlays = [];
 let infoWindow = null;
 
+function getLocationLabel(result) {
+  const component = (type) => result.address_components?.find((item) =>
+    item.types.includes(type)
+  )?.long_name;
+  const road = component("route");
+  const area = component("locality") || component("postal_town") ||
+    component("administrative_area_level_2") ||
+    component("administrative_area_level_1");
+  return [road, area].filter(Boolean).join(", ") || result.formatted_address;
+}
+
 function clear() {
   for (const overlay of overlays) {
     overlay.map = null;
@@ -33,7 +44,7 @@ async function showDetails(event, marker) {
       const response = await new Geocoder().geocode({
         location: { lat: event.lat, lng: event.lng },
       });
-      const label = response.results?.[0]?.formatted_address;
+      const label = response.results?.[0] && getLocationLabel(response.results[0]);
       if (label) {
         cached = { label };
         saveLocationToCache({ panoId: "", lat: event.lat, lng: event.lng, label });
@@ -67,7 +78,8 @@ export async function renderResultMap(events) {
   if (events.length === 0) return;
 
   if (!map) {
-    ({ Map: MapClass, Circle, Geocoder } = await importLibrary("maps"));
+    ({ Map: MapClass, Circle } = await importLibrary("maps"));
+    ({ Geocoder } = await importLibrary("geocoding"));
     ({ AdvancedMarkerElement } = await importLibrary("marker"));
     map = new MapClass(container, {
       center: { lat: events[0].lat, lng: events[0].lng },
