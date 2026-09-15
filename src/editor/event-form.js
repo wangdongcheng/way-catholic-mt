@@ -123,25 +123,6 @@ function checkpointFields(event, route) {
   `;
 }
 
-function routeMessageFields(event) {
-  return `
-    <section class="form-section">
-      <h3>Message</h3>
-      <div class="form-grid">
-        ${textareaField("Message text", "message", event.message)}
-        ${inputField("Auto-close (ms, 0 = OK)", "autoCloseMs", event.autoCloseMs ?? 0, { type: "number", min: 0 })}
-        <label class="form-field">
-          <span>Priority</span>
-          <select data-field="priority">
-            <option value="normal" ${event.priority !== "high" ? "selected" : ""}>Normal</option>
-            <option value="high" ${event.priority === "high" ? "selected" : ""}>High</option>
-          </select>
-        </label>
-      </div>
-    </section>
-  `;
-}
-
 const OBSERVATION_TYPES = [
   ["stop-line", "Stop line"],
   ["stop-sign", "Stop sign"],
@@ -478,9 +459,7 @@ export function createEventForm({ container, title, store }) {
           ? ""
           : isFinish
             ? ""
-            : event.type === "route-message"
-              ? routeMessageFields(event)
-              : commandFields(event)}
+            : commandFields(event)}
       <section class="form-section danger-zone">
         <button class="button danger" type="button" data-action="delete-event">
           Delete event

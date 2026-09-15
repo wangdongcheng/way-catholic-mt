@@ -306,11 +306,6 @@ function handleRouteEvent(event, targetPosition, onFinish) {
     return;
   }
 
-  if (event.type === "route-message" || event.type === "message") {
-    showRouteMessage(event);
-    return;
-  }
-
   if (event.type === "examiner-command") {
     commandQueue.push({ event, targetPosition });
     showNextCommand();
@@ -351,13 +346,11 @@ async function initApp() {
     events: mode === "exam" ? route.events || [] : [],
     streetViewService: streetView.streetViewService,
     panorama,
-    onEvent: mode === "practice"
-      ? (event) => showRouteMessage(event)
-      : (event, targetPosition) => handleRouteEvent(
-          event,
-          targetPosition,
-          requestExamCompletion
-        ),
+    onEvent: (event, targetPosition) => handleRouteEvent(
+      event,
+      targetPosition,
+      requestExamCompletion
+    ),
     onMissedEvent: (event, { penalty, skippedByEventId }) => {
       if (mode !== "exam") {
         return;

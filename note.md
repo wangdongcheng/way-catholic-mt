@@ -96,58 +96,15 @@ Mirror, Signal, Manoeuvre (MSM)
 
 | Event 类型 | Practice 练车模式 | Exam 考试模式 |
 |---|---|---|
-| Route Message | 当前不会加载路线内事件 | 到点显示路线提示 |
 | Examiner Command | 当前不会加载 | 到点显示答题指令，记录结果和扣分 |
 | Observation Check | 自动显示教学提示 | 要求点击对应观察按钮，可能扣分 |
 | Critical Violation | 暂停练习并警告，可以继续 | 立即终止考试 |
 | Route Checkpoint | 当前不追踪 | 按事件顺序追踪，可判定漏点并扣分 |
+| Route Finish | 当前不会加载 | 到点结算剩余事件并显示考试结果 |
 
-## 1. Route Message
+路线 JSON 目前只支持 `examiner-command` 和 `route-finish`。独立的 `route-message` / `message` Event 已不再支持；Practice 教学提示统一来自全局 Observation Check 的 `practiceMessage`。`showRouteMessage()` 仍作为通用消息 UI，用于练习提示、漏点提示和初始化错误等非独立 Event 场景。
 
-对应类型：
-
-```json
-"type": "route-message"
-```
-
-或者：
-
-```json
-"type": "message"
-```
-
-### Practice
-
-当前实际行为：**不会触发。**
-
-原因是 Practice 模式创建 Route Event Engine 时传入的是空数组，所以路线 JSON 中的所有事件都不会加载，包括 Route Message。
-
-Practice 当前显示的练习提示来自全局 `observation-checks.json` 的 `practiceMessage`，不是路线 JSON。
-
-### Exam
-
-进入事件的 `radius` 后：
-
-- 若配置了方向范围，还需匹配 `headingMin` / `headingMax` 才显示内容。
-- 使用 Route Message 弹窗显示。
-- 不需要用户答题。
-- 本身不记录正确或错误结果。
-- 本身不直接扣分。
-
-如果该事件同时是必经点：
-
-```json
-"required": true,
-"penaltyOnMiss": 5
-```
-
-跳过它时会：
-
-- 记录 `status: "missed"`。
-- 增加 `penaltyOnMiss`。
-- 显示 `missedRouteMessage` 或路线默认漏点提示。
-
-## 2. Examiner Command
+## 1. Examiner Command
 
 对应类型：
 
@@ -234,7 +191,7 @@ Practice 当前显示的练习提示来自全局 `observation-checks.json` 的 `
 - 使用 `penaltyOnMiss` 扣分。
 - 显示漏掉路线点的提示。
 
-## 3. Observation Check
+## 2. Observation Check
 
 数据来自：
 
@@ -252,10 +209,10 @@ public/data/observation-checks.json
 
 ### 两个模式共有条件
 
-只有以下事件会加载：
+只有未被明确禁用的事件会加载：
 
 ```json
-"enabled": true
+"enabled": false
 ```
 
 触发时检查：
@@ -264,7 +221,7 @@ public/data/observation-checks.json
 - 可选的 `pano`
 - 可选的 `headingMin` / `headingMax`
 
-`enabled: false` 时，两个模式都不处理。
+`enabled: false` 时，两个模式都不处理；字段省略或为 `true` 时加载。
 
 ### Practice
 
@@ -294,14 +251,14 @@ public/data/observation-checks.json
 
 ### Exam
 
-只加载：
+只加载未被以下任一配置明确禁用的事件：
 
 ```json
-"enabled": true,
-"examEnabled": true
+"enabled": false,
+"examEnabled": false
 ```
 
-如果 `examEnabled: false`：
+也就是说，`enabled` 和 `examEnabled` 省略或为 `true` 时会在 Exam 中加载；如果任一字段为 `false`：
 
 - 考试中完全忽略。
 - 不显示按钮。
@@ -384,7 +341,7 @@ public/data/observation-checks.json
 - 点击不匹配类型时，使用所有活动事件中最高的 `penaltyOnIncorrect`。
 - 所有观察按钮统一显示，不暴露正确答案。
 
-## 4. Critical Violation
+## 3. Critical Violation
 
 数据来自：
 
@@ -446,19 +403,19 @@ public/data/critical-violations.json
 - 记录 `status: "failed"`。
 - 立即停止考试。
 - 停止位置检测。
-- 清除等待中的 Examiner Commands。
+- 清除当前及等待中的 Examiner Commands，但不把它们另记为未回答。
 - 隐藏 Observation Toolbar。
 - 锁定 Street View。
-- 显示 Test failed 弹窗。
-- 使用 `examFailure.title/message/reasonCode`。
-- 只提供 Restart。
+- 直接显示 Failed 考试结果页，不结算仍在等待的 Observation。
+- Critical 事件在问题清单中的名称优先使用 `examFailure.message`，失败原因标记为 Critical Violation。
+- 提供 Try again 和 Choose another route。
 - 不增加数字 Penalty。
 
 也就是说，Critical Violation 当前是“直接挂科”，不是普通扣分。
 
-## 5. Route Checkpoint 顺序机制
+## 4. Route Checkpoint 顺序机制
 
-Route JSON 中的每一个 Route Event 同时可以充当路线检查点。
+Route JSON 中的每个 Event 都参与路线顺序追踪，包括 `examiner-command` 和 `route-finish`。
 
 ### Practice
 
@@ -473,7 +430,7 @@ Route JSON 中的每一个 Route Event 同时可以充当路线检查点。
 
 路线事件按 JSON 数组顺序执行。
 
-默认值由 Route Navigation 控制：
+普通路线事件的默认值由 Route Navigation 控制：
 
 ```json
 "navigation": {
@@ -484,56 +441,91 @@ Route JSON 中的每一个 Route Event 同时可以充当路线检查点。
 
 当 `eventsAreCheckpoints: true`：
 
-- 没有单独设置 `required` 的事件，默认都是必经点。
+- 没有单独设置 `required` 的普通事件，默认都是必经点。
 - 没有单独设置 `penaltyOnMiss` 的事件，使用路线默认扣分。
+- `route-finish` 始终被规范化为 `required: true`、`penaltyOnMiss: 0`。
 
 到达后面的事件时，前面仍未到达的事件会被结算：
 
 - `required: true`：标记为 `missed`，记录并扣分。
 - `required: false`：标记为 `skipped`，不扣分、不提示。
 
-### 当前一个重要细节
+### Checkpoint 到达与内容触发
 
 Checkpoint 的“到达”和 Event 内容的“触发”条件不同：
 
 - 进入 `radius` 就算 Checkpoint 已到达。
-- 但 Command/Message 内容可能还要求 Heading 匹配。
+- 但 Examiner Command 内容可能还要求 Heading 匹配。
+- `route-finish` 不检查 Heading。
 
 因此可能出现：
 
 ```text
-路线点算已到达，但因为朝向不符合，指令内容没有显示。
+路线点算已到达，但因为朝向不符合，Examiner Command 没有显示。
 ```
 
-这种情况当前不会按漏点扣分。
+这种情况当前不会按漏点扣分；到达后面的事件时，尚未触发的指令内容会被抑制。
+
+## 5. Route Finish 与考试结算
+
+对应类型：
+
+```json
+"type": "route-finish"
+```
+
+Practice 不加载路线事件，因此不会触发 Route Finish。
+
+Exam 到达 Route Finish 的 `radius` 后：
+
+1. 先按路线顺序把此前尚未到达的必经事件记为 `missed` 并扣分。
+2. Route Finish 不受 `headingMin` / `headingMax` 限制。
+3. 把当前活动和排队中的 Examiner Commands 记为 `out-of-range`。
+4. 把仍为 `active` 的 Observation 记为 `observation-missed`；已确认的 Observation 结算为 `completed`。
+5. 停止位置检测、锁定 Street View，并显示考试结果页。
+
+Critical Violation 也会立即结束考试，但不会执行上述待处理 Command 和 Observation 的普通结算。
 
 ## 6. `grievousFault` 当前行为
 
-多个事件中存在：
+Examiner Command 和 Observation Check 可以配置：
 
 ```json
 "grievousFault": true
 ```
 
-但目前运行代码没有使用这个字段。
+该字段不会在事件发生时立即终止考试，而是随答题、漏答或漏点结果保存。考试结算时，只有该事件产生失败结果才会导致 `grievousFailure: true`；正确完成带有 `grievousFault` 的事件不会导致失败。
 
-所以现在它：
+因此：
 
-- 不会自动结束考试。
-- 不会改变扣分。
-- 不会改变提示样式。
-- 不会影响最终状态。
+- 普通 grievous fault 不会立即中断驾驶。
+- 它本身不额外增加 Penalty。
+- 最终分数即使达到及格线，仍会判定考试失败。
 
-真正会立即终止考试的只有 `critical-violation`。
+Critical Violation 始终以 `criticalViolation: true` 和 `grievousFault: true` 记录，并立即终止考试。
 
 ## 7. 当前结果记录范围
 
-只有 Exam 正常答题和 Observation 会通过 `recordResult()`：
+Exam 会记录：
 
-- 更新 `results`。
-- 累加 `totalPenalty`。
-- 更新屏幕 Penalty。
+- Examiner Command 的正确、错误、超出答题范围和路线漏点结果。
+- Observation Check 的确认正确、按钮错误和漏确认结果。
+- Critical Violation 的直接失败结果。
 
-Critical Violation 也会加入 `results`，但直接使用 `results.push()`，不会增加 Penalty。
+分数规则为：
 
-Practice 中普通 Observation 不记录结果；Practice Critical Violation 会留下 `practice-warning` 记录，但目前没有结果页面展示它。当前也还没有“路线全部完成后自动结束考试”的机制。
+```text
+最高分 100
+最终分数 = max(0, 100 - totalPenalty)
+及格线 75
+```
+
+必须同时满足以下条件才通过：
+
+- 分数不少于 75。
+- 没有 Critical Violation。
+- 没有产生失败结果的 grievous fault。
+
+Route Finish 触发正常结算后，结果页会显示分数、扣分、时长、指令与 Observation 统计、漏过的必经路线点、Critical Violation 数量和问题清单。
+
+Practice 中普通 Observation 不记录成绩；Practice Critical Violation 会留下 `practice-warning` 记录，但不会进入考试结果页。

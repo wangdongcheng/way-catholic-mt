@@ -354,15 +354,6 @@ export function validateRoute(route) {
       continue;
     }
 
-    if (event.type === "route-message") {
-      issues.push(issue(
-        "error",
-        "Standalone route messages are no longer supported.",
-        eventId
-      ));
-      continue;
-    }
-
     if (event.type !== "examiner-command") {
       issues.push(issue("error", `Unsupported event type: ${event.type}`, eventId));
       continue;
