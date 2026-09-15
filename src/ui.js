@@ -759,7 +759,10 @@ export function showExamResult(result, { onRetry, onChooseRoute }) {
   document.getElementById("exam-result-choose-route").onclick = onChooseRoute;
 
   if (!dialog.open) dialog.showModal();
-  void renderResultMap(result.mapEvents || []);
+  void renderResultMap(result.mapEvents || [], {
+    start: result.mapStart,
+    finish: result.criticalFailure ? null : result.mapFinish,
+  });
   document.getElementById("exam-result-retry")?.focus();
 }
 

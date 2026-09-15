@@ -518,6 +518,13 @@ body[data-mode="selection"] #restart-button {
 .result-map-marker.incorrect,
 .result-map-marker.critical { background: #dc2626; }
 
+.result-map-marker.start { background: #2563eb; }
+.result-map-marker.finish { background: #16a34a; }
+
+.result-map-marker.route-point {
+  font-size: 15px;
+}
+
 .result-map-info {
   min-width: 180px;
   color: #0f172a;

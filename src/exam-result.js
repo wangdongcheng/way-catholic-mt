@@ -71,6 +71,13 @@ function createMapEvents(results, route) {
   }).filter(Boolean);
 }
 
+function getRouteFinish(route) {
+  const finish = route?.events?.find((event) => event.type === "route-finish");
+  return Number.isFinite(finish?.lat) && Number.isFinite(finish?.lng)
+    ? { lat: finish.lat, lng: finish.lng }
+    : null;
+}
+
 export function createExamResult({
   route,
   results,
@@ -160,5 +167,10 @@ export function createExamResult({
     },
     issues: createIssues(safeResults),
     mapEvents: createMapEvents(safeResults, route),
+    mapStart: Number.isFinite(route?.startState?.lat) &&
+      Number.isFinite(route?.startState?.lng)
+      ? { lat: route.startState.lat, lng: route.startState.lng }
+      : null,
+    mapFinish: getRouteFinish(route),
   };
 }

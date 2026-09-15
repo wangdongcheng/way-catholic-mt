@@ -30,10 +30,10 @@ function clear() {
   overlays = [];
 }
 
-function markerContent(status) {
+function markerContent(status, label = null) {
   const element = document.createElement("div");
-  element.className = `result-map-marker ${status}`;
-  element.textContent = status === "correct" ? "✓" : status === "critical" ? "!" : "×";
+  element.className = `result-map-marker ${status}${label ? " route-point" : ""}`;
+  element.textContent = label || (status === "correct" ? "✓" : status === "critical" ? "!" : "×");
   return element;
 }
 
@@ -70,19 +70,20 @@ async function showDetails(event, marker) {
   infoWindow.open({ map, anchor: marker });
 }
 
-export async function renderResultMap(events) {
+export async function renderResultMap(events, { start = null, finish = null } = {}) {
   const container = document.getElementById("exam-result-map");
   const section = document.getElementById("exam-result-map-section");
   if (!container || !section) return;
-  section.hidden = events.length === 0;
-  if (events.length === 0) return;
+  const points = [start, finish, ...events].filter(Boolean);
+  section.hidden = points.length === 0;
+  if (points.length === 0) return;
 
   if (!map) {
     ({ Map: MapClass, Circle } = await importLibrary("maps"));
     ({ Geocoder } = await importLibrary("geocoding"));
     ({ AdvancedMarkerElement } = await importLibrary("marker"));
     map = new MapClass(container, {
-      center: { lat: events[0].lat, lng: events[0].lng },
+      center: { lat: points[0].lat, lng: points[0].lng },
       zoom: 16,
       mapId: "DEMO_MAP_ID",
       streetViewControl: true,
@@ -95,6 +96,21 @@ export async function renderResultMap(events) {
 
   clear();
   const bounds = new google.maps.LatLngBounds();
+  for (const [label, position, status] of [
+    ["S", start, "start"],
+    ["E", finish, "finish"],
+  ]) {
+    if (!position) continue;
+    const marker = new AdvancedMarkerElement({
+      map,
+      position,
+      title: label === "S" ? "Route start" : "Route finish",
+      content: markerContent(status, label),
+      zIndex: 5,
+    });
+    overlays.push(marker);
+    bounds.extend(position);
+  }
   for (const event of events) {
     const position = { lat: event.lat, lng: event.lng };
     const marker = new AdvancedMarkerElement({
@@ -120,7 +136,7 @@ export async function renderResultMap(events) {
     }));
     bounds.extend(position);
   }
-  if (events.length === 1) {
+  if (points.length === 1) {
     map.setCenter(bounds.getCenter());
     map.setZoom(16);
   } else {
