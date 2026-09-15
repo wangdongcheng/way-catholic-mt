@@ -518,6 +518,18 @@ body[data-mode="selection"] #restart-button {
 .result-map-marker.incorrect,
 .result-map-marker.critical { background: #dc2626; }
 
+.result-map-info {
+  min-width: 180px;
+  color: #0f172a;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.result-map-info strong {
+  color: #0f172a;
+  font-size: 14px;
+}
+
 #exam-result-dialog[data-status="failed"] #exam-result-panel {
   border-color: #ef4444;
 }
