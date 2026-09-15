@@ -117,30 +117,9 @@
     <div id="exam-result-panel">
       <div id="exam-result-eyebrow">Driving Test Result</div>
       <h1 id="exam-result-title">Test complete</h1>
-      <div id="exam-result-score-row">
-        <strong id="exam-result-score">0</strong>
-        <span>out of <span id="exam-result-maximum">100</span></span>
-      </div>
-      <p id="exam-result-reason"></p>
-      <dl id="exam-result-meta">
-        <div><dt>Route</dt><dd id="exam-result-route">-</dd></div>
-        <div><dt>Penalty</dt><dd id="exam-result-penalty">0</dd></div>
-        <div><dt>Duration</dt><dd id="exam-result-duration">0:00</dd></div>
-        <div><dt>Completed</dt><dd id="exam-result-completed">-</dd></div>
-      </dl>
-      <section id="exam-result-performance" aria-labelledby="exam-result-performance-title">
-        <h2 id="exam-result-performance-title">Performance</h2>
-        <div id="exam-result-stats">
-          <div><span>Examiner commands</span><strong id="exam-result-commands">0 / 0</strong></div>
-          <div><span>Observations</span><strong id="exam-result-observations">0 / 0</strong></div>
-          <div><span>Missed route points</span><strong id="exam-result-route-missed">0</strong></div>
-          <div><span>Critical violations</span><strong id="exam-result-critical">0</strong></div>
-        </div>
+      <section id="exam-result-map-section" aria-label="Exam event map">
+        <div id="exam-result-map"></div>
       </section>
-      <details id="exam-result-review">
-        <summary>Review mistakes <span id="exam-result-issue-count">0</span></summary>
-        <ul id="exam-result-issues"></ul>
-      </details>
       <div id="exam-result-actions">
         <button id="exam-result-choose-route" class="secondary-button" type="button">
           Choose another route

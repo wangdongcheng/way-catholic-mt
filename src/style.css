@@ -466,7 +466,7 @@ body[data-mode="selection"] #restart-button {
 }
 
 #exam-result-dialog {
-  width: min(680px, calc(100vw - 32px));
+  width: min(960px, calc(100vw - 32px));
   max-height: calc(100vh - 32px);
   padding: 0;
   overflow: auto;
@@ -489,6 +489,35 @@ body[data-mode="selection"] #restart-button {
   color: white;
 }
 
+#exam-result-map-section {
+  margin: 0 0 20px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+}
+
+#exam-result-map {
+  height: min(54vh, 430px);
+  background: #1e293b;
+}
+
+.result-map-marker {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 3px solid white;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.38);
+  color: white;
+  font-size: 19px;
+  font-weight: 900;
+}
+
+.result-map-marker.correct { background: #16a34a; }
+.result-map-marker.incorrect,
+.result-map-marker.critical { background: #dc2626; }
+
 #exam-result-dialog[data-status="failed"] #exam-result-panel {
   border-color: #ef4444;
 }
@@ -506,7 +535,7 @@ body[data-mode="selection"] #restart-button {
 }
 
 #exam-result-title {
-  margin: 7px 0 10px;
+  margin: 7px 0 20px;
   color: #4ade80;
   font-size: clamp(30px, 6vw, 48px);
 }

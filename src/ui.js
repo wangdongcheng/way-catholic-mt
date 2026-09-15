@@ -2,6 +2,7 @@ import {
   findLocationInCache,
   saveLocationToCache,
 } from "./location-cache.js";
+import { renderResultMap } from "./result-map.js";
 
 const currentInfoEnabled =
   new URLSearchParams(window.location.search).get("currentinfo") === "1";
@@ -746,87 +747,19 @@ function setText(id, value) {
 
 export function showExamResult(result, { onRetry, onChooseRoute }) {
   const dialog = document.getElementById("exam-result-dialog");
-  const issues = document.getElementById("exam-result-issues");
-  const review = document.getElementById("exam-result-review");
 
-  if (!(dialog instanceof HTMLDialogElement) || !issues) {
+  if (!(dialog instanceof HTMLDialogElement)) {
     return;
   }
 
   const passed = result.status === "passed";
   dialog.dataset.status = result.status;
   setText("exam-result-title", passed ? "Passed" : "Failed");
-  setText("exam-result-score", result.score);
-  setText("exam-result-maximum", result.maximumScore);
-  setText("exam-result-route", result.routeName);
-  setText("exam-result-penalty", result.totalPenalty);
-  setText("exam-result-duration", formatExamDuration(result.durationMs));
-  setText(
-    "exam-result-completed",
-    new Date(result.completedAt).toLocaleString("en-GB", {
-      dateStyle: "medium",
-      timeStyle: "short",
-    })
-  );
-
-  const failureReasons = [];
-  if (result.criticalFailure) failureReasons.push("a critical violation");
-  if (result.grievousFailure && !result.criticalFailure) {
-    failureReasons.push("a grievous fault");
-  }
-  if (!passed && result.score < result.passScore) {
-    failureReasons.push(`a score below ${result.passScore}`);
-  }
-  setText(
-    "exam-result-reason",
-    passed
-      ? `You reached the pass score of ${result.passScore}.`
-      : `The test was failed because of ${failureReasons.join(" and ")}.`
-  );
-  setText(
-    "exam-result-commands",
-    `${result.summary.commands.correct} / ${result.summary.commands.total}`
-  );
-  setText(
-    "exam-result-observations",
-    `${result.summary.observations.correct} / ${result.summary.observations.total}`
-  );
-  setText("exam-result-route-missed", result.summary.routePoints.missed);
-  setText("exam-result-critical", result.summary.criticalViolations);
-  setText("exam-result-issue-count", result.issues.length);
-
-  issues.replaceChildren();
-  for (const issue of result.issues) {
-    const item = document.createElement("li");
-    const heading = document.createElement("div");
-    const status = document.createElement("strong");
-    const penalty = document.createElement("span");
-    const label = document.createElement("p");
-
-    heading.className = "exam-result-issue-heading";
-    status.textContent = EXAM_ISSUE_STATUS_LABELS[issue.status] || "Driving fault";
-    penalty.textContent = issue.penalty > 0 ? `−${issue.penalty}` : "Failed";
-    label.textContent = issue.label;
-    heading.append(status, penalty);
-    item.append(heading, label);
-
-    if (issue.grievousFault || issue.criticalViolation) {
-      const badge = document.createElement("small");
-      badge.textContent = issue.criticalViolation
-        ? "Critical violation"
-        : "Grievous fault";
-      item.appendChild(badge);
-    }
-
-    issues.appendChild(item);
-  }
-
-  review.hidden = result.issues.length === 0;
-  review.open = false;
   document.getElementById("exam-result-retry").onclick = onRetry;
   document.getElementById("exam-result-choose-route").onclick = onChooseRoute;
 
   if (!dialog.open) dialog.showModal();
+  void renderResultMap(result.mapEvents || []);
   document.getElementById("exam-result-retry")?.focus();
 }
 

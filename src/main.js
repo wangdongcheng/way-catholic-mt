@@ -153,6 +153,15 @@ function recordResult(result) {
   updatePenaltyScore(totalPenalty);
 }
 
+function getMapDetails(event) {
+  return {
+    mapPosition: Number.isFinite(event?.lat) && Number.isFinite(event?.lng)
+      ? { lat: event.lat, lng: event.lng }
+      : null,
+    mapRadius: Number(event?.radius) || 0,
+  };
+}
+
 function getCommandLabel(event) {
   return event.command || event.id || "Examiner command";
 }
@@ -218,6 +227,7 @@ function completeActiveCommand(selectedIds) {
     penalty,
     grievousFault: event.grievousFault === true,
     answeredAt: Date.now(),
+    ...getMapDetails(event),
   });
 
   activeCommand = null;
@@ -251,6 +261,7 @@ function recordUnansweredCommand(command, distance = null) {
       ? { distanceFromTarget: Number(distance.toFixed(1)) }
       : {}),
     answeredAt: null,
+    ...getMapDetails(event),
   });
 }
 
@@ -367,6 +378,7 @@ async function initApp() {
         grievousFault: event.grievousFault === true,
         skippedByEventId,
         answeredAt: null,
+        ...getMapDetails(event),
       });
 
       const message = event.missedRouteMessage ||
@@ -404,6 +416,7 @@ async function initApp() {
         penalty: 0,
         grievousFault: event.grievousFault === true,
         answeredAt: Date.now(),
+        ...getMapDetails(event),
       });
       showExaminerFeedback(
         "Observation recorded correctly.",
@@ -421,6 +434,7 @@ async function initApp() {
         grievousFault: event.grievousFault === true,
         distanceFromTarget: Number(distance.toFixed(1)),
         answeredAt: null,
+        ...getMapDetails(event),
       });
       showExaminerFeedback(
         "A required observation was missed.",
@@ -444,6 +458,7 @@ async function initApp() {
           event.grievousFault === true
         ),
         answeredAt: Date.now(),
+        ...getMapDetails(activeEvents[0]),
       });
       showExaminerFeedback(
         "That observation did not match.",
@@ -678,7 +693,7 @@ async function initApp() {
   };
 
   function handleCriticalViolation(event, details) {
-    results.push({
+    recordResult({
       eventId: event.id,
       eventType: event.type,
       label: event.examFailure?.message || event.rule || event.id,
@@ -688,6 +703,8 @@ async function initApp() {
       penalty: 0,
       criticalViolation: true,
       grievousFault: true,
+      mapPosition: event.forbiddenDestination?.location || null,
+      mapRadius: Number(event.forbiddenDestination?.radius) || 0,
       ...details,
     });
 

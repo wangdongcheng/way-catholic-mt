@@ -33,6 +33,44 @@ function createIssues(results) {
   }));
 }
 
+function getMapStatus(result) {
+  if (result.criticalViolation || (result.grievousFault && result.correct === false)) {
+    return "critical";
+  }
+  return result.correct === true ? "correct" : "incorrect";
+}
+
+function createMapEvents(results, route) {
+  const routeEvents = new Map((route?.events || []).map((event) => [event.id, event]));
+  const latestByEvent = new Map();
+
+  for (const result of results) {
+    if (result.eventId) latestByEvent.set(result.eventId, result);
+  }
+
+  return [...latestByEvent.values()].map((result) => {
+    const routeEvent = routeEvents.get(result.eventId);
+    const position = result.mapPosition || (routeEvent && {
+      lat: routeEvent.lat,
+      lng: routeEvent.lng,
+    });
+    const radius = result.mapRadius ?? routeEvent?.radius;
+
+    if (!Number.isFinite(position?.lat) || !Number.isFinite(position?.lng)) return null;
+    return {
+      id: result.eventId,
+      label: result.label || result.eventId,
+      type: result.eventType,
+      status: getMapStatus(result),
+      radius: Number(radius) || 0,
+      lat: position.lat,
+      lng: position.lng,
+      grievousFault: result.grievousFault === true,
+      criticalViolation: result.criticalViolation === true,
+    };
+  }).filter(Boolean);
+}
+
 export function createExamResult({
   route,
   results,
@@ -121,5 +159,6 @@ export function createExamResult({
       ).length,
     },
     issues: createIssues(safeResults),
+    mapEvents: createMapEvents(safeResults, route),
   };
 }
