@@ -6,5 +6,9 @@
   {
     "id": "route-002",
     "name": "Route 2 — Five-Step Sequence"
+  },
+  {
+    "id": "route-003",
+    "name": "Route 3"
   }
 ]

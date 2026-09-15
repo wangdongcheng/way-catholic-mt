@@ -2,7 +2,7 @@
 
 ![MDTS - Malta Driving Test Simulator](image.png)
 
-MDTS is a Google Street View–based practice and driving-test simulator. Exam routes contain ordered examiner commands, answers, checkpoints, and penalties. Practice messages are maintained separately and appear only in Practice mode.
+MDTS is a Google Street View–based practice and driving-test simulator. Test routes contain ordered examiner commands, answers, checkpoints, and penalties. Practice messages are maintained separately and appear only in Practice mode.
 
 ## Getting Started
 
@@ -49,7 +49,7 @@ http://localhost:5173/?mode=exam&route=route-001
 The start screen offers two modes:
 
 * **Practice** starts immediately without an examiner or route selection. Every enabled observation becomes an automatic teaching message, and critical violations show a red warning.
-* **Exam** asks for a route or Random, then displays the test notice. Observation buttons remain available while driving, and a critical violation ends the test.
+* **Test** asks for a route or Random, then displays the test notice. Observation buttons remain available while driving, and a critical violation ends the test.
 
 ### Route Editor
 
@@ -74,7 +74,7 @@ Selects the driving mode after the start screen:
 ?mode=exam&route=route-001
 ```
 
-Without `mode`, the application displays the Practice/Exam choice.
+Without `mode`, the application displays the Practice/Test choice.
 
 ### `route`
 
@@ -243,7 +243,7 @@ URL: /?route=route-003
 | `name`       | string | Human-readable route name displayed by the application and Editor. |
 | `startState` | object | Initial Street View position and camera state.                     |
 | `navigation` | object | Route-level checkpoint and missed-event defaults.                  |
-| `events`     |  array | Ordered list of examiner commands used in Exam mode.                |
+| `events`     |  array | Ordered route events ending with one `route-finish` event.          |
 
 ## Start State
 
@@ -335,6 +335,27 @@ triggered
 suppressed
 ```
 
+## Route Finish
+
+Every route must contain exactly one `route-finish` event, and it must be the
+last item in the ordered `events` array.
+
+```json
+{
+  "id": "route-001-finish",
+  "type": "route-finish",
+  "lat": 35.8897667,
+  "lng": 14.5038232,
+  "radius": 20,
+  "pano": null
+}
+```
+
+Reaching this location settles earlier route checkpoints, outstanding examiner
+commands, and active observation checks before producing the Test Result. A
+route finish is always treated as a required checkpoint with no missed-event
+penalty. Heading restrictions do not apply to it.
+
 ## Common Event Properties
 
 Examiner commands and observation checks share these location properties:
@@ -367,6 +388,10 @@ Examiner commands and observation checks share these location properties:
 | `required`           |        boolean | Whether missing the event should be recorded and penalized.          |
 | `penaltyOnMiss`      |         number | Penalty applied when this required event is missed.                  |
 | `missedRouteMessage` | message object | Optional event-specific message displayed when this event is missed. |
+
+Examiner commands and observation checks also require a boolean
+`grievousFault` value. When a grievous event fails, the final Test Result is
+`Failed` regardless of the remaining score. It does not end the test early.
 
 An event must provide either:
 
@@ -406,7 +431,7 @@ event.missedRouteMessage
 
 ## Observation Checks
 
-Global observations are stored in `public/data/observation-checks.json`. They do not belong to a route. Practice mode displays every enabled observation as a teaching message. Exam mode silently activates observations with `examEnabled` set to `true` and requires the matching toolbar button before the answer range is left.
+Global observations are stored in `public/data/observation-checks.json`. They do not belong to a route. Practice mode displays every enabled observation as a teaching message. Test mode silently activates observations with `examEnabled` set to `true` and requires the matching toolbar button before the answer range is left.
 
 ```json
 {
@@ -437,11 +462,14 @@ observation triggers only while the Street View camera heading is inside the
 configured range. Both values must be provided together and must be between
 `0` and `360`. A range such as `340` to `60` crosses north.
 
-Set `examEnabled` to `false` for a teaching point that should appear in Practice but be ignored in Exam. Observation button definitions are stored in `public/data/observation-types.json`.
+Set `examEnabled` to `false` for a teaching point that should appear in Practice but be ignored in Test. Observation button definitions are stored in `public/data/observation-types.json`.
 
 ## Critical Violations
 
-Global critical violations are stored in `public/data/critical-violations.json`. A violation is armed when the driver reaches checkpoint A. Reaching forbidden destination B before `windowMs` expires triggers a red Practice warning or immediately fails an Exam.
+Global critical violations are stored in `public/data/critical-violations.json`. A violation is armed when the driver reaches checkpoint A. Reaching forbidden destination B before `windowMs` expires triggers a red Practice warning or immediately fails a Test.
+
+Every critical violation is inherently grievous, so critical-violation events
+do not use a `grievousFault` field.
 
 ```json
 {
@@ -474,6 +502,20 @@ Global critical violations are stored in `public/data/critical-violations.json`.
   }
 }
 ```
+
+## Test Result
+
+Reaching `route-finish` ends a normal test and opens a result report. The score
+starts at 100 and cannot fall below zero:
+
+```text
+score = max(0, 100 - totalPenalty)
+```
+
+The pass score is 75. The result is `Failed` when the score is below 75, a
+grievous event failed, or a critical violation occurred. The report includes
+the route, duration, total penalty, command and observation performance, missed
+route points, critical violations, and a review of failed events.
 
 ## Examiner Command Events
 
@@ -671,7 +713,7 @@ In the Editor:
 9. Review Route Validation.
 10. Export the JSON.
 
-To maintain roadside teaching and exam observations, select **Observation Checks**. Exports use the filename `observation-checks.json`.
+To maintain roadside teaching and test observations, select **Observation Checks**. Exports use the filename `observation-checks.json`.
 
 To maintain two-point serious-error detection, select **Critical Violations**. Place checkpoint A first and forbidden destination B second. Exports use the filename `critical-violations.json`.
 
@@ -695,9 +737,12 @@ git push
 
 ## Maintaining Event Order
 
-New events are appended to the end of the `events` array.
+The Route Editor keeps `route-finish` last. New examiner commands are inserted
+immediately before it.
 
 Because array order defines route progress, inspect the exported JSON and ensure events appear in the actual driving order.
+
+Each route must contain exactly one `route-finish` event as its final item.
 
 The current Editor does not provide drag-and-drop event reordering. If necessary, reorder the event objects manually in the JSON file before committing it.
 

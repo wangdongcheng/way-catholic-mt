@@ -26,7 +26,7 @@
       "observationType": "road-awareness",
       "lat": 35.8889359,
       "lng": 14.5032415,
-      "radius": 22,
+      "radius": 18,
       "answerRadius": 50,
       "pano": null,
       "penaltyOnMiss": 3,
@@ -49,6 +49,46 @@
       "pano": null,
       "practiceMessage": {
         "message": "The road narrows ahead. Reduce speed and be prepared to give way.The road narrows ahead. Reduce speed and be prepared to give way.The road narrows ahead. Reduce speed and be prepared to give way.The road narrows ahead. Reduce speed and be prepared to give way.The road narrows ahead. Reduce speed and be prepared to give way.The road narrows ahead. Reduce speed and be prepared to give way.The road narrows ahead. Reduce speed and be prepared to give way.The road narrows ahead. Reduce speed and be prepared to give way.The road narrows ahead. Reduce speed and be prepared to give way.",
+        "priority": "normal",
+        "modal": true
+      }
+    },
+    {
+      "id": "observation-001",
+      "type": "observation-check",
+      "grievousFault": false,
+      "enabled": true,
+      "examEnabled": false,
+      "observationType": "road-awareness",
+      "lat": 35.8883558,
+      "lng": 14.5032118,
+      "radius": 25,
+      "answerRadius": 45,
+      "pano": null,
+      "penaltyOnMiss": 3,
+      "penaltyOnIncorrect": 1,
+      "practiceMessage": {
+        "message": "There's a small chance the examiner will ask you to turn left uphill at the next junction; most of the time, you'll be asked to turn right at the first roundabout.",
+        "priority": "normal",
+        "modal": true
+      }
+    },
+    {
+      "id": "observation-002",
+      "type": "observation-check",
+      "grievousFault": false,
+      "enabled": true,
+      "examEnabled": false,
+      "observationType": "road-awareness",
+      "lat": 35.8886864,
+      "lng": 14.5033082,
+      "radius": 9,
+      "answerRadius": 45,
+      "pano": null,
+      "penaltyOnMiss": 3,
+      "penaltyOnIncorrect": 1,
+      "practiceMessage": {
+        "message": "Right here, rarely you might have to turn left and go up the slope; keep in mind that there is a 15 km/h speed limit up there.",
         "priority": "normal",
         "modal": true
       }

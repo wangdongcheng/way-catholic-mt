@@ -29,15 +29,21 @@ export function normalizeRouteConfig(route) {
 
   const navigation = resolveRouteNavigation(route);
   const events = Array.isArray(route.events)
-    ? route.events.map((event) => ({
-        ...event,
-        required: event.required !== undefined
-          ? event.required
-          : navigation.eventsAreCheckpoints,
-        penaltyOnMiss: event.penaltyOnMiss !== undefined
-          ? event.penaltyOnMiss
-          : navigation.defaultPenaltyOnMiss,
-      }))
+    ? route.events.map((event) => event.type === "route-finish"
+      ? {
+          ...event,
+          required: true,
+          penaltyOnMiss: 0,
+        }
+      : {
+          ...event,
+          required: event.required !== undefined
+            ? event.required
+            : navigation.eventsAreCheckpoints,
+          penaltyOnMiss: event.penaltyOnMiss !== undefined
+            ? event.penaltyOnMiss
+            : navigation.defaultPenaltyOnMiss,
+        })
     : route.events;
 
   return {

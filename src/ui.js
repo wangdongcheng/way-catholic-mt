@@ -2,6 +2,7 @@ import {
   findLocationInCache,
   saveLocationToCache,
 } from "./location-cache.js";
+import { renderResultMap } from "./result-map.js";
 
 const currentInfoEnabled =
   new URLSearchParams(window.location.search).get("currentinfo") === "1";
@@ -118,7 +119,6 @@ export function updatePenaltyScore(penalty) {
 }
 
 export function showModeSelection(routes, {
-  selectedRouteId,
   onPractice,
   onExam,
 }) {
@@ -141,9 +141,10 @@ export function showModeSelection(routes, {
     const option = document.createElement("option");
     option.value = route.id;
     option.textContent = route.name;
-    option.selected = route.id === selectedRouteId;
     routeSelect.appendChild(option);
   }
+
+  routeSelect.value = "random";
 
   choice.hidden = false;
   routeChoice.hidden = true;
@@ -289,7 +290,7 @@ export function scheduleLocationUpdate(panorama, geocoder) {
   }, 300);
 }
 
-export function showExamStart(startNotice, { onStart, routeName }) {
+export function showStartNotice(startNotice, { onStart, routeName }) {
   const dialog = document.getElementById("exam-start-dialog");
   const title = document.getElementById("exam-start-title");
   const items = document.getElementById("exam-start-items");
@@ -326,7 +327,7 @@ export function showExamStart(startNotice, { onStart, routeName }) {
     items.appendChild(listItem);
   }
 
-  button.textContent = notice.buttonLabel || "Start Exam";
+  button.textContent = notice.buttonLabel || "Start Test";
   button.disabled = false;
   button.onclick = async () => {
     button.disabled = true;
@@ -334,7 +335,7 @@ export function showExamStart(startNotice, { onStart, routeName }) {
     try {
       await onStart();
     } catch (error) {
-      console.error("Failed to start the exam:", error);
+      console.error("Failed to start the test:", error);
       button.disabled = false;
     }
   };
@@ -723,6 +724,53 @@ export function hideExamFailure() {
   if (dialog instanceof HTMLDialogElement && dialog.open) dialog.close();
 }
 
+const EXAM_ISSUE_STATUS_LABELS = Object.freeze({
+  answered: "Incorrect answer",
+  failed: "Critical violation",
+  missed: "Route point missed",
+  "out-of-range": "No answer recorded",
+  "observation-incorrect": "Incorrect observation",
+  "observation-missed": "Observation missed",
+});
+
+function formatExamDuration(durationMs) {
+  const totalSeconds = Math.max(0, Math.floor(durationMs / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = String(totalSeconds % 60).padStart(2, "0");
+  return `${minutes}:${seconds}`;
+}
+
+function setText(id, value) {
+  const element = document.getElementById(id);
+  if (element) element.textContent = String(value);
+}
+
+export function showExamResult(result, { onRetry, onChooseRoute }) {
+  const dialog = document.getElementById("exam-result-dialog");
+
+  if (!(dialog instanceof HTMLDialogElement)) {
+    return;
+  }
+
+  const passed = result.status === "passed";
+  dialog.dataset.status = result.status;
+  setText("exam-result-title", passed ? "Passed" : "Failed");
+  document.getElementById("exam-result-retry").onclick = onRetry;
+  document.getElementById("exam-result-choose-route").onclick = onChooseRoute;
+
+  if (!dialog.open) dialog.showModal();
+  void renderResultMap(result.mapEvents || [], {
+    start: result.mapStart,
+    finish: result.criticalFailure ? null : result.mapFinish,
+  });
+  document.getElementById("exam-result-retry")?.focus();
+}
+
+export function hideExamResult() {
+  const dialog = document.getElementById("exam-result-dialog");
+  if (dialog instanceof HTMLDialogElement && dialog.open) dialog.close();
+}
+
 export function bindUiActions({ onRestart }) {
   const restartDialog = document.getElementById("restart-confirm-dialog");
   const restartCancel = document.getElementById("restart-cancel");
@@ -761,6 +809,11 @@ export function bindUiActions({ onRestart }) {
     });
 
   document.getElementById("exam-failure-dialog")
+    ?.addEventListener("cancel", (event) => {
+      event.preventDefault();
+    });
+
+  document.getElementById("exam-result-dialog")
     ?.addEventListener("cancel", (event) => {
       event.preventDefault();
     });

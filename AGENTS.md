@@ -31,8 +31,8 @@ This file defines the working rules for AI coding agents in the entire repositor
 - Preserve unrelated user changes in a dirty worktree. Never reset, discard, or rewrite them.
 - Keep each commit focused on the requested task.
 - Commit messages must be entirely in English, including the subject and body.
-- Prefix AI-authored commit subjects with `ChatGPT: `.
-- Example: `ChatGPT: Add observation checkpoint feedback`.
+- Prefix AI-authored commit subjects with `<version>-<model>-<reasoning>: `.
+- Example for GPT-5.6 Sol at medium reasoning: `5.6-Sol-medium: Add observation checkpoint feedback`.
 
 ## Scope Discipline
 

@@ -10,12 +10,39 @@ setOptions({
 const COLORS = {
   message: "#2563eb",
   command: "#f97316",
+  finish: "#22c55e",
   answer: "#eab308",
   criticalTrigger: "#f97316",
   criticalDestination: "#dc2626",
   invalid: "#dc2626",
   heading: "#7c3aed",
 };
+
+const DEFAULT_START_POSITION = Object.freeze({
+  lat: 35.8880832,
+  lng: 14.5029997,
+});
+
+function getStartPosition(route) {
+  const start = route?.startState;
+
+  if (Number.isFinite(start?.lat) && Number.isFinite(start?.lng)) {
+    return { lat: start.lat, lng: start.lng };
+  }
+
+  return route?.type === "critical-violations"
+    ? DEFAULT_START_POSITION
+    : null;
+}
+
+function createLetterMarkerContent(className, text) {
+  const content = document.createElement("div");
+  content.className = className;
+  const label = document.createElement("span");
+  label.textContent = text;
+  content.append(label);
+  return content;
+}
 
 function offsetPoint(center, distanceMeters, bearingDegrees) {
   const earthRadius = 6371000;
@@ -93,7 +120,7 @@ export async function createEditorMap({
   const { AdvancedMarkerElement } = await importLibrary("marker");
 
   const map = new GoogleMap(container, {
-    center: { lat: 35.8880832, lng: 14.5029997 },
+    center: DEFAULT_START_POSITION,
     zoom: 16,
     mapId: "DEMO_MAP_ID",
     streetViewControl: true,
@@ -148,6 +175,19 @@ export async function createEditorMap({
 
   function sync(route, selectedEventId, issuesByEvent) {
     clearOverlays();
+
+    const start = getStartPosition(route);
+
+    if (start) {
+      const marker = new AdvancedMarkerElement({
+        map,
+        position: start,
+        title: "Route start",
+        content: createLetterMarkerContent("editor-start-marker", "S"),
+        zIndex: 30,
+      });
+      overlays.push(marker);
+    }
 
     for (const event of route?.events || []) {
       const invalid = issuesByEvent.has(event.id);
@@ -229,7 +269,9 @@ export async function createEditorMap({
       const center = { lat: event.lat, lng: event.lng };
       const baseColor = event.type === "examiner-command"
         ? COLORS.command
-        : COLORS.message;
+        : event.type === "route-finish"
+          ? COLORS.finish
+          : COLORS.message;
       const color = invalid ? COLORS.invalid : baseColor;
 
       const marker = new AdvancedMarkerElement({
@@ -238,6 +280,9 @@ export async function createEditorMap({
         title: `${event.id} · ${event.type}`,
         gmpDraggable: true,
         zIndex: selected ? 20 : 10,
+        content: event.type === "route-finish"
+          ? createLetterMarkerContent("editor-finish-marker", "E")
+          : undefined,
       });
       marker.addListener("click", () => onSelect(event.id));
       marker.addListener("dragend", () => {
@@ -301,10 +346,10 @@ export async function createEditorMap({
   }
 
   function focusRoute(route) {
-    const start = route?.startState;
+    const start = getStartPosition(route);
 
-    if (Number.isFinite(start?.lat) && Number.isFinite(start?.lng)) {
-      map.setCenter({ lat: start.lat, lng: start.lng });
+    if (start) {
+      map.setCenter(start);
       map.setZoom(16);
       return;
     }

@@ -211,6 +211,34 @@ h1 {
   height: 100%;
 }
 
+.editor-start-marker,
+.editor-finish-marker {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 3px solid white;
+  border-radius: 50% 50% 50% 0;
+  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.4);
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 800;
+  transform: rotate(-45deg);
+}
+
+.editor-start-marker {
+  background: #0f766e;
+}
+
+.editor-finish-marker {
+  background: #16a34a;
+}
+
+.editor-start-marker span,
+.editor-finish-marker span {
+  transform: rotate(45deg);
+}
+
 .map-legend {
   position: absolute;
   left: 16px;
@@ -237,6 +265,7 @@ h1 {
 }
 
 .legend-dot,
+.legend-pin,
 .legend-ring,
 .legend-wedge {
   display: inline-block;
@@ -246,6 +275,31 @@ h1 {
 
 .legend-dot {
   border-radius: 50%;
+}
+
+.legend-pin {
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid white;
+  border-radius: 50% 50% 50% 0;
+  color: white;
+  font-size: 0.55rem;
+  font-style: normal;
+  line-height: 1;
+  transform: rotate(-45deg);
+}
+
+.legend-pin b {
+  font-weight: 800;
+  transform: rotate(45deg);
+}
+
+.legend-pin.start {
+  background: #0f766e;
+}
+
+.legend-pin.finish {
+  background: #16a34a;
 }
 
 .legend-dot.message {

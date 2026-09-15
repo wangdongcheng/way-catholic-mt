@@ -18,7 +18,18 @@ export const EXAM_START_NOTICE = Object.freeze({
     "Answer examiner commands before leaving the valid area.",
     "Leaving the valid area without answering will result in a penalty.",
   ],
-  buttonLabel: "Start Exam",
+  buttonLabel: "Start Test",
+});
+
+export const PRACTICE_START_NOTICE = Object.freeze({
+  title: "Before the practice",
+  items: [
+    "Use Practice mode to become familiar with the route.",
+    "Follow the on-screen examiner commands and observation prompts.",
+    "Review the feedback shown after each practice event.",
+    "You can restart and choose another mode at any time.",
+  ],
+  buttonLabel: "Start Practice",
 });
 
 function getUrlCoordinates() {

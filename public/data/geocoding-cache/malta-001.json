@@ -693,6 +693,34 @@
       "lng": 14.50427903547913,
       "label": "Triq San Tumas, Il-Furjana",
       "cachedAt": "2026-09-12T09:27:30.178Z"
+    },
+    {
+      "panoId": "",
+      "lat": 35.8883578,
+      "lng": 14.5031947,
+      "label": "Floriana",
+      "cachedAt": "2026-09-15T21:37:56.276Z"
+    },
+    {
+      "panoId": "",
+      "lat": 35.8899045,
+      "lng": 14.5039009,
+      "label": "Triq Emvin Cremona, Il-Furjana",
+      "cachedAt": "2026-09-15T21:38:00.647Z"
+    },
+    {
+      "panoId": "",
+      "lat": 35.8891213,
+      "lng": 14.5034454,
+      "label": "Floriana",
+      "cachedAt": "2026-09-15T21:38:01.833Z"
+    },
+    {
+      "panoId": "",
+      "lat": 35.8889359,
+      "lng": 14.5032415,
+      "label": "Floriana",
+      "cachedAt": "2026-09-15T21:38:01.901Z"
     }
   ]
 }

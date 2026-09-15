@@ -123,25 +123,6 @@ function checkpointFields(event, route) {
   `;
 }
 
-function routeMessageFields(event) {
-  return `
-    <section class="form-section">
-      <h3>Message</h3>
-      <div class="form-grid">
-        ${textareaField("Message text", "message", event.message)}
-        ${inputField("Auto-close (ms, 0 = OK)", "autoCloseMs", event.autoCloseMs ?? 0, { type: "number", min: 0 })}
-        <label class="form-field">
-          <span>Priority</span>
-          <select data-field="priority">
-            <option value="normal" ${event.priority !== "high" ? "selected" : ""}>Normal</option>
-            <option value="high" ${event.priority === "high" ? "selected" : ""}>High</option>
-          </select>
-        </label>
-      </div>
-    </section>
-  `;
-}
-
 const OBSERVATION_TYPES = [
   ["stop-line", "Stop line"],
   ["stop-sign", "Stop sign"],
@@ -166,7 +147,7 @@ function observationFields(event) {
         <label class="correct-control">
           <input type="checkbox" data-field="examEnabled"
             ${event.examEnabled !== false ? "checked" : ""} />
-          Check during exam
+          Check during test
         </label>
         <label class="form-field full-width">
           <span>Observation type</span>
@@ -198,7 +179,7 @@ function observationFields(event) {
 
     ${event.examEnabled === false ? "" : `
       <section class="form-section">
-        <h3>Exam check</h3>
+        <h3>Test check</h3>
         <div class="form-grid">
           ${inputField("Answer radius (m)", "answerRadius", event.answerRadius, { type: "number", min: 1 })}
           ${inputField("Penalty on miss", "penaltyOnMiss", event.penaltyOnMiss ?? 0, { type: "number", min: 0 })}
@@ -284,7 +265,7 @@ function criticalViolationFields(event) {
     </section>
 
     <section class="form-section">
-      <h3>Exam failure</h3>
+      <h3>Test failure</h3>
       <div class="form-grid">
         ${criticalInput("Title", "examTitle", event.examFailure?.title || "")}
         ${criticalInput("Reason code", "reasonCode", event.examFailure?.reasonCode || "")}
@@ -463,18 +444,21 @@ export function createEventForm({ container, title, store }) {
     const documentType = state.route.type;
     const isObservation = documentType === "observation-checks";
     const isCritical = documentType === "critical-violations";
+    const isFinish = event.type === "route-finish";
 
     container.innerHTML = `
       ${isObservation || isCritical ? "" : routeNavigationFields(state.route)}
-      ${faultFields(event)}
+      ${isCritical || isFinish ? "" : faultFields(event)}
       ${isCritical ? criticalViolationFields(event) : commonFields(event)}
-      ${isObservation || isCritical ? "" : checkpointFields(event, state.route)}
+      ${isObservation || isCritical || isFinish
+        ? ""
+        : checkpointFields(event, state.route)}
       ${isObservation
         ? observationFields(event)
         : isCritical
           ? ""
-          : event.type === "route-message"
-            ? routeMessageFields(event)
+          : isFinish
+            ? ""
             : commandFields(event)}
       <section class="form-section danger-zone">
         <button class="button danger" type="button" data-action="delete-event">

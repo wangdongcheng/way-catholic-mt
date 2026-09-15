@@ -139,7 +139,6 @@ function validateCriticalDocument(document) {
 
   for (const event of events) {
     const eventId = event.id || null;
-    validateGrievousFault(event, issues);
     const trigger = event.triggerCheckpoint;
     const forbidden = event.forbiddenDestination;
     const triggerLocation = trigger?.location;
@@ -176,10 +175,10 @@ function validateCriticalDocument(document) {
       issues.push(issue("error", "Practice warning message is required.", eventId));
     }
     if (!event.examFailure?.message?.trim()) {
-      issues.push(issue("error", "Exam failure message is required.", eventId));
+      issues.push(issue("error", "Test failure message is required.", eventId));
     }
     if (!event.examFailure?.reasonCode?.trim()) {
-      issues.push(issue("error", "Exam failure reason code is required.", eventId));
+      issues.push(issue("error", "Test failure reason code is required.", eventId));
     }
     if (
       triggerLocation &&
@@ -270,10 +269,25 @@ export function validateRoute(route) {
   }
 
   const seenIds = new Set();
+  const finishEvents = route.events.filter((event) =>
+    event.type === "route-finish"
+  );
+
+  if (finishEvents.length !== 1) {
+    issues.push(issue(
+      "error",
+      "A route must contain exactly one route-finish event."
+    ));
+  } else if (route.events.at(-1) !== finishEvents[0]) {
+    issues.push(issue(
+      "error",
+      "The route-finish event must be the final event in route order.",
+      finishEvents[0].id || null
+    ));
+  }
 
   for (const event of route.events) {
     const eventId = event.id || null;
-    validateGrievousFault(event, issues);
 
     if (!eventId) {
       issues.push(issue("error", "Every event requires an ID."));
@@ -336,12 +350,7 @@ export function validateRoute(route) {
       ));
     }
 
-    if (event.type === "route-message") {
-      issues.push(issue(
-        "error",
-        "Standalone route messages are no longer supported.",
-        eventId
-      ));
+    if (event.type === "route-finish") {
       continue;
     }
 
@@ -349,6 +358,8 @@ export function validateRoute(route) {
       issues.push(issue("error", `Unsupported event type: ${event.type}`, eventId));
       continue;
     }
+
+    validateGrievousFault(event, issues);
 
     if (!event.command?.trim()) {
       issues.push(issue("error", "Examiner command text is required.", eventId));
