@@ -7,6 +7,7 @@ export default defineConfig({
       input: {
         main: resolve(import.meta.dirname, "index.html"),
         editor: resolve(import.meta.dirname, "editor.html"),
+        cached: resolve(import.meta.dirname, "cached.html"),
       },
     },
   },
