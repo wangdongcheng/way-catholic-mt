@@ -912,15 +912,6 @@ button:focus-visible {
   color: white;
 }
 
-#exam-start-eyebrow {
-  margin-bottom: 7px;
-  color: #fbbf24;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
 #exam-start-title {
   margin: 0 0 18px;
   font-size: clamp(24px, 4vw, 34px);
