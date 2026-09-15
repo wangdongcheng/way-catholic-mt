@@ -10,7 +10,7 @@ export const APP_CONFIG = {
 };
 
 export const EXAM_START_NOTICE = Object.freeze({
-  title: "Before the test",
+  title: "Before the exam",
   items: [
     "Follow the examiner's instructions carefully.",
     "Observe all road signs and speed limits.",
