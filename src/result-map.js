@@ -90,7 +90,7 @@ export async function renderResultMap(events) {
       fullscreenControl: false,
       clickableIcons: false,
     });
-    infoWindow = new google.maps.InfoWindow();
+    infoWindow = new google.maps.InfoWindow({ headerDisabled: true });
   }
 
   clear();
