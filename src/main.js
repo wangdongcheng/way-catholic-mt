@@ -9,7 +9,8 @@ import {
   loadObservationChecks,
   loadObservationTypes,
   loadRouteConfig,
-  EXAM_START_NOTICE
+  EXAM_START_NOTICE,
+  PRACTICE_START_NOTICE,
 } from "./config.js";
 
 import { createEventEngine } from "./event-engine.js";
@@ -597,6 +598,17 @@ async function initApp() {
     });
   };
 
+  const preparePractice = () => {
+    driveStarted = false;
+    setLocationUpdatesEnabled(false);
+    setStreetViewLocked(panorama, true);
+    hideCurrentInfo();
+    hideObservationToolbar();
+    showExamStart(PRACTICE_START_NOTICE, {
+      onStart: startDrive,
+    });
+  };
+
   const navigateToMode = (nextMode, routeId = null) => {
     const url = new URL(window.location.href);
     url.searchParams.set("mode", nextMode);
@@ -758,7 +770,7 @@ async function initApp() {
   if (mode === "exam") {
     prepareExam();
   } else if (mode === "practice") {
-    await startDrive();
+    preparePractice();
   } else {
     showModeChooser();
   }

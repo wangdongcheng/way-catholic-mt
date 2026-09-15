@@ -21,6 +21,17 @@ export const EXAM_START_NOTICE = Object.freeze({
   buttonLabel: "Start Exam",
 });
 
+export const PRACTICE_START_NOTICE = Object.freeze({
+  title: "Before the practice",
+  items: [
+    "Use Practice mode to become familiar with the route.",
+    "Follow the on-screen examiner commands and observation prompts.",
+    "Review the feedback shown after each practice event.",
+    "You can restart and choose another mode at any time.",
+  ],
+  buttonLabel: "Start Practice",
+});
+
 function getUrlCoordinates() {
   const searchParams = new URLSearchParams(window.location.search);
   const latParam = searchParams.get("lat");
