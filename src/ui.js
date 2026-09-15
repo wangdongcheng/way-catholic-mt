@@ -289,7 +289,7 @@ export function scheduleLocationUpdate(panorama, geocoder) {
   }, 300);
 }
 
-export function showExamStart(startNotice, { onStart, routeName }) {
+export function showStartNotice(startNotice, { onStart, routeName }) {
   const dialog = document.getElementById("exam-start-dialog");
   const title = document.getElementById("exam-start-title");
   const items = document.getElementById("exam-start-items");

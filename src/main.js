@@ -41,7 +41,7 @@ import {
   showExaminerFeedback,
   showExamFailure,
   showExamResult,
-  showExamStart,
+  showStartNotice,
   showInfoTemporarily,
   showModeSelection,
   showObservationToolbar,
@@ -592,7 +592,7 @@ async function initApp() {
     setStreetViewLocked(panorama, true);
     hideCurrentInfo();
     hideObservationToolbar();
-    showExamStart(EXAM_START_NOTICE, {
+    showStartNotice(EXAM_START_NOTICE, {
       onStart: startExam,
       routeName: route.name,
     });
@@ -604,7 +604,7 @@ async function initApp() {
     setStreetViewLocked(panorama, true);
     hideCurrentInfo();
     hideObservationToolbar();
-    showExamStart(PRACTICE_START_NOTICE, {
+    showStartNotice(PRACTICE_START_NOTICE, {
       onStart: startDrive,
     });
   };
