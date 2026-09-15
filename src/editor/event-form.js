@@ -147,7 +147,7 @@ function observationFields(event) {
         <label class="correct-control">
           <input type="checkbox" data-field="examEnabled"
             ${event.examEnabled !== false ? "checked" : ""} />
-          Check during exam
+          Check during test
         </label>
         <label class="form-field full-width">
           <span>Observation type</span>
@@ -179,7 +179,7 @@ function observationFields(event) {
 
     ${event.examEnabled === false ? "" : `
       <section class="form-section">
-        <h3>Exam check</h3>
+        <h3>Test check</h3>
         <div class="form-grid">
           ${inputField("Answer radius (m)", "answerRadius", event.answerRadius, { type: "number", min: 1 })}
           ${inputField("Penalty on miss", "penaltyOnMiss", event.penaltyOnMiss ?? 0, { type: "number", min: 0 })}
@@ -265,7 +265,7 @@ function criticalViolationFields(event) {
     </section>
 
     <section class="form-section">
-      <h3>Exam failure</h3>
+      <h3>Test failure</h3>
       <div class="form-grid">
         ${criticalInput("Title", "examTitle", event.examFailure?.title || "")}
         ${criticalInput("Reason code", "reasonCode", event.examFailure?.reasonCode || "")}

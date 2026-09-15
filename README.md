@@ -2,7 +2,7 @@
 
 ![MDTS - Malta Driving Test Simulator](image.png)
 
-MDTS is a Google Street View–based practice and driving-test simulator. Exam routes contain ordered examiner commands, answers, checkpoints, and penalties. Practice messages are maintained separately and appear only in Practice mode.
+MDTS is a Google Street View–based practice and driving-test simulator. Test routes contain ordered examiner commands, answers, checkpoints, and penalties. Practice messages are maintained separately and appear only in Practice mode.
 
 ## Getting Started
 
@@ -49,7 +49,7 @@ http://localhost:5173/?mode=exam&route=route-001
 The start screen offers two modes:
 
 * **Practice** starts immediately without an examiner or route selection. Every enabled observation becomes an automatic teaching message, and critical violations show a red warning.
-* **Exam** asks for a route or Random, then displays the test notice. Observation buttons remain available while driving, and a critical violation ends the test.
+* **Test** asks for a route or Random, then displays the test notice. Observation buttons remain available while driving, and a critical violation ends the test.
 
 ### Route Editor
 
@@ -74,7 +74,7 @@ Selects the driving mode after the start screen:
 ?mode=exam&route=route-001
 ```
 
-Without `mode`, the application displays the Practice/Exam choice.
+Without `mode`, the application displays the Practice/Test choice.
 
 ### `route`
 
@@ -352,7 +352,7 @@ last item in the ordered `events` array.
 ```
 
 Reaching this location settles earlier route checkpoints, outstanding examiner
-commands, and active observation checks before producing the Exam Result. A
+commands, and active observation checks before producing the Test Result. A
 route finish is always treated as a required checkpoint with no missed-event
 penalty. Heading restrictions do not apply to it.
 
@@ -390,8 +390,8 @@ Examiner commands and observation checks share these location properties:
 | `missedRouteMessage` | message object | Optional event-specific message displayed when this event is missed. |
 
 Examiner commands and observation checks also require a boolean
-`grievousFault` value. When a grievous event fails, the final Exam Result is
-`Failed` regardless of the remaining score. It does not end the exam early.
+`grievousFault` value. When a grievous event fails, the final Test Result is
+`Failed` regardless of the remaining score. It does not end the test early.
 
 An event must provide either:
 
@@ -431,7 +431,7 @@ event.missedRouteMessage
 
 ## Observation Checks
 
-Global observations are stored in `public/data/observation-checks.json`. They do not belong to a route. Practice mode displays every enabled observation as a teaching message. Exam mode silently activates observations with `examEnabled` set to `true` and requires the matching toolbar button before the answer range is left.
+Global observations are stored in `public/data/observation-checks.json`. They do not belong to a route. Practice mode displays every enabled observation as a teaching message. Test mode silently activates observations with `examEnabled` set to `true` and requires the matching toolbar button before the answer range is left.
 
 ```json
 {
@@ -462,11 +462,11 @@ observation triggers only while the Street View camera heading is inside the
 configured range. Both values must be provided together and must be between
 `0` and `360`. A range such as `340` to `60` crosses north.
 
-Set `examEnabled` to `false` for a teaching point that should appear in Practice but be ignored in Exam. Observation button definitions are stored in `public/data/observation-types.json`.
+Set `examEnabled` to `false` for a teaching point that should appear in Practice but be ignored in Test. Observation button definitions are stored in `public/data/observation-types.json`.
 
 ## Critical Violations
 
-Global critical violations are stored in `public/data/critical-violations.json`. A violation is armed when the driver reaches checkpoint A. Reaching forbidden destination B before `windowMs` expires triggers a red Practice warning or immediately fails an Exam.
+Global critical violations are stored in `public/data/critical-violations.json`. A violation is armed when the driver reaches checkpoint A. Reaching forbidden destination B before `windowMs` expires triggers a red Practice warning or immediately fails a Test.
 
 Every critical violation is inherently grievous, so critical-violation events
 do not use a `grievousFault` field.
@@ -503,9 +503,9 @@ do not use a `grievousFault` field.
 }
 ```
 
-## Exam Result
+## Test Result
 
-Reaching `route-finish` ends a normal exam and opens a result report. The score
+Reaching `route-finish` ends a normal test and opens a result report. The score
 starts at 100 and cannot fall below zero:
 
 ```text
@@ -713,7 +713,7 @@ In the Editor:
 9. Review Route Validation.
 10. Export the JSON.
 
-To maintain roadside teaching and exam observations, select **Observation Checks**. Exports use the filename `observation-checks.json`.
+To maintain roadside teaching and test observations, select **Observation Checks**. Exports use the filename `observation-checks.json`.
 
 To maintain two-point serious-error detection, select **Critical Violations**. Place checkpoint A first and forbidden destination B second. Exports use the filename `critical-violations.json`.
 

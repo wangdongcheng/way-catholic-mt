@@ -175,10 +175,10 @@ function validateCriticalDocument(document) {
       issues.push(issue("error", "Practice warning message is required.", eventId));
     }
     if (!event.examFailure?.message?.trim()) {
-      issues.push(issue("error", "Exam failure message is required.", eventId));
+      issues.push(issue("error", "Test failure message is required.", eventId));
     }
     if (!event.examFailure?.reasonCode?.trim()) {
-      issues.push(issue("error", "Exam failure reason code is required.", eventId));
+      issues.push(issue("error", "Test failure reason code is required.", eventId));
     }
     if (
       triggerLocation &&

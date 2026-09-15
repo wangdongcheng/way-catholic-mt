@@ -10,7 +10,7 @@ export const APP_CONFIG = {
 };
 
 export const EXAM_START_NOTICE = Object.freeze({
-  title: "Before the exam",
+  title: "Before the test",
   items: [
     "Follow the examiner's instructions carefully.",
     "Observe all road signs and speed limits.",
@@ -18,7 +18,7 @@ export const EXAM_START_NOTICE = Object.freeze({
     "Answer examiner commands before leaving the valid area.",
     "Leaving the valid area without answering will result in a penalty.",
   ],
-  buttonLabel: "Start Exam",
+  buttonLabel: "Start Test",
 });
 
 export const PRACTICE_START_NOTICE = Object.freeze({

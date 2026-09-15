@@ -326,7 +326,7 @@ export function showStartNotice(startNotice, { onStart, routeName }) {
     items.appendChild(listItem);
   }
 
-  button.textContent = notice.buttonLabel || "Start Exam";
+  button.textContent = notice.buttonLabel || "Start Test";
   button.disabled = false;
   button.onclick = async () => {
     button.disabled = true;
@@ -334,7 +334,7 @@ export function showStartNotice(startNotice, { onStart, routeName }) {
     try {
       await onStart();
     } catch (error) {
-      console.error("Failed to start the exam:", error);
+      console.error("Failed to start the test:", error);
       button.disabled = false;
     }
   };
