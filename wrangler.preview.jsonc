@@ -15,7 +15,7 @@
   "r2_buckets": [
     {
       "binding": "MDTS_DATA",
-      "bucket_name": "mdts-data-production",
+      "bucket_name": "mdts-data-preview",
       "preview_bucket_name": "mdts-data-dev"
     }
   ],

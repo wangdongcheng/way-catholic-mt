@@ -10,7 +10,9 @@
     "dev": "vite",
     "prebuild": "npm run routes:index",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy:production": "wrangler deploy --config wrangler.jsonc --keep-vars",
+    "deploy:preview": "wrangler versions upload --config wrangler.preview.jsonc --keep-vars"
   },
   "devDependencies": {
     "vite": "^8.2.2",
