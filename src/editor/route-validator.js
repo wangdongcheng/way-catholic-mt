@@ -338,6 +338,10 @@ export function validateRoute(route) {
       ));
     }
 
+    if (event.type === "route-finish") {
+      continue;
+    }
+
     const hasOneHeading =
       Number.isFinite(event.headingMin) !==
       Number.isFinite(event.headingMax);
@@ -348,10 +352,6 @@ export function validateRoute(route) {
         "Heading minimum and maximum must be provided together.",
         eventId
       ));
-    }
-
-    if (event.type === "route-finish") {
-      continue;
     }
 
     if (event.type !== "examiner-command") {

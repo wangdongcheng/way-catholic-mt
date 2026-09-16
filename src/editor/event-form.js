@@ -65,7 +65,7 @@ function routeNavigationFields(route) {
   `;
 }
 
-function commonFields(event) {
+function commonFields(event, { showHeading = true } = {}) {
   return `
     <section class="form-section">
       <div class="section-title">
@@ -77,12 +77,16 @@ function commonFields(event) {
         ${inputField("Longitude", "lng", event.lng, { type: "number", step: "any" })}
         ${inputField("Trigger radius (m)", "radius", event.radius, { type: "number", min: 1 })}
         ${inputField("Pano ID (optional)", "pano", event.pano || "")}
-        ${inputField("Heading minimum", "headingMin", event.headingMin ?? "", { type: "number", min: 0, max: 360 })}
-        ${inputField("Heading maximum", "headingMax", event.headingMax ?? "", { type: "number", min: 0, max: 360 })}
+        ${showHeading ? `
+          ${inputField("Heading minimum", "headingMin", event.headingMin ?? "", { type: "number", min: 0, max: 360 })}
+          ${inputField("Heading maximum", "headingMax", event.headingMax ?? "", { type: "number", min: 0, max: 360 })}
+        ` : ""}
       </div>
-      <button class="text-button" type="button" data-action="clear-heading">
-        Remove heading restriction
-      </button>
+      ${showHeading ? `
+        <button class="text-button" type="button" data-action="clear-heading">
+          Remove heading restriction
+        </button>
+      ` : ""}
     </section>
   `;
 }
@@ -449,7 +453,9 @@ export function createEventForm({ container, title, store }) {
     container.innerHTML = `
       ${isObservation || isCritical ? "" : routeNavigationFields(state.route)}
       ${isCritical || isFinish ? "" : faultFields(event)}
-      ${isCritical ? criticalViolationFields(event) : commonFields(event)}
+      ${isCritical
+        ? criticalViolationFields(event)
+        : commonFields(event, { showHeading: !isFinish })}
       ${isObservation || isCritical || isFinish
         ? ""
         : checkpointFields(event, state.route)}
