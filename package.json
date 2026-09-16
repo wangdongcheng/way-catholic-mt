@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "routes:index": "node scripts/generate-route-index.js",
+    "test:remote-data": "node scripts/test-remote-data-files.js",
     "predev": "npm run routes:index",
     "dev": "vite",
     "prebuild": "npm run routes:index",
@@ -12,9 +13,11 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "vite": "^8.2.2"
+    "vite": "^8.2.2",
+    "wrangler": "^4.132.0"
   },
   "dependencies": {
-    "@googlemaps/js-api-loader": "^2.1.1"
+    "@googlemaps/js-api-loader": "^2.1.1",
+    "jose": "^6.2.12"
   }
 }
