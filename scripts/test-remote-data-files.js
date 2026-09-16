@@ -37,7 +37,8 @@ globalThis.fetch = async (path, options = {}) => {
   return new Response(JSON.stringify(documents.get(path)), {
     headers: {
       "Content-Type": "application/json",
-      ETag: "loaded-etag",
+      ETag: 'W/"loaded-etag"',
+      "X-MDTS-ETag": '"loaded-etag"',
     },
   });
 };
@@ -62,7 +63,7 @@ assert.deepEqual(
 );
 
 const loaded = await readRemoteDataSet("route-001");
-assert.equal(loaded.etag, "loaded-etag");
+assert.equal(loaded.etag, '"loaded-etag"');
 
 const saved = await writeRemoteDataSet(
   { id: "route-001", name: "Route 1", events: [] },
@@ -70,7 +71,7 @@ const saved = await writeRemoteDataSet(
 );
 assert.equal(saved.etag, "new-etag");
 assert.equal(writeRequest.path, "/api/admin/data/routes/route-001.json");
-assert.equal(writeRequest.options.headers["If-Match"], "loaded-etag");
+assert.equal(writeRequest.options.headers["If-Match"], '"loaded-etag"');
 
 await writeRemoteDataSet(
   { id: "route-002", name: "Route 2", events: [] },

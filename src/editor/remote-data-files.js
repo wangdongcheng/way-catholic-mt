@@ -58,7 +58,10 @@ async function fetchJson(path) {
     throw new Error(remoteErrorMessage(response, payload));
   }
 
-  return { payload, etag: response.headers.get("etag") };
+  return {
+    payload,
+    etag: response.headers.get("x-mdts-etag") || response.headers.get("etag"),
+  };
 }
 
 function getGlobalDataSet(dataSetId) {

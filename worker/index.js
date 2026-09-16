@@ -351,6 +351,7 @@ export default {
       object.writeHttpMetadata(headers);
       headers.set("Content-Type", "application/json; charset=utf-8");
       headers.set("ETag", object.httpEtag);
+      headers.set("X-MDTS-ETag", object.httpEtag);
 
       // Disable edge caching during the initial migration.
       headers.set("Cache-Control", "no-store");
