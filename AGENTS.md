@@ -33,6 +33,7 @@ This file defines the working rules for AI coding agents in the entire repositor
 - Commit messages must be entirely in English, including the subject and body.
 - Prefix AI-authored commit subjects with `<version>-<model>-<reasoning>: `.
 - Example for GPT-5.6 Sol at medium reasoning: `5.6-Sol-medium: Add observation checkpoint feedback`.
+- Use the version, model, and reasoning values supplied by session metadata when available. If any value is unavailable, ask the user to confirm it rather than inferring it.
 
 ## Scope Discipline
 
