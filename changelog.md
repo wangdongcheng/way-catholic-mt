@@ -2,6 +2,37 @@
 
 本文件根据仓库提交历史按主要功能里程碑整理，不逐条记录分支合并、实验性提交和单纯的数据缓存更新。
 
+## 2026-09-16 — R2 在线路线编辑与受保护的管理接口
+
+- Route Editor 新增 R2 远程数据工作流，同时保留原有本地目录编辑方式：
+  - 在线 HTTPS 环境自动从 R2 加载数据，无需选择本地 `public/data` 目录；本地开发环境继续使用 File System Access API。
+  - 数据集菜单从远程 `route-index.json`、`observation-checks.json` 和 `critical-violations.json` 动态建立。
+  - 支持在线读取、编辑并保存现有路线、Observation Checks 和 Critical Violations，也支持创建新路线。
+  - 保存路线后自动更新并排序远程路线索引；编辑器同步刷新数据集菜单及当前 ETag。
+  - 在线错误提示覆盖身份验证失效、远程文件冲突、服务端校验失败和非 JSON 响应等情况。
+- 新增 Cloudflare Worker 数据层，将静态应用、公开数据读取和管理写入统一到同一部署中：
+  - `/data/*` 从 `MDTS_DATA` R2 binding 提供公开的只读 JSON，仅允许路线、路线索引、全局观察数据、严重违规数据和地理编码缓存等明确的数据路径。
+  - `/api/admin/data/*` 仅允许 `PUT`，并限制可写目标为路线、Observation Checks 和 Critical Violations。
+  - 写入前检查 JSON Content-Type、1 MiB 大小限制、文档对象格式、稳定 ID、数据类型及现有 Route Editor 校验规则。
+  - 路线 ID 仅接受字母、数字和连字符，阻止路径穿越及未声明的数据文件访问。
+- 管理写入接入 Cloudflare Access / Zero Trust 身份验证：
+  - Worker 验证 `Cf-Access-Jwt-Assertion` 的签名、签发方和 Application Audience，而不是仅依赖边缘转发的请求头。
+  - 使用 Cloudflare Access 团队域名公开的 JWK，并在 Worker 实例内复用签名密钥集合。
+  - 验证成功后记录令牌中的邮箱或主体标识，并随保存结果返回更新者信息。
+  - Access 未配置、缺少登录令牌及令牌校验失败分别返回明确的 `503`、`401` 和 `403` 响应。
+- 增加远程数据的并发保护与可恢复性：
+  - 加载数据时记录 R2 ETag，更新时使用 `If-Match`，防止旧编辑页面静默覆盖较新的修改。
+  - 创建新路线时使用 `If-None-Match: *`，防止重复 ID 覆盖已有文件。
+  - 每次覆盖前按时间戳将原文件保存到 R2 `backups/`；路线索引在更新前同样保留备份。
+  - 修复 Cloudflare gzip 压缩把浏览器可见 ETag 改为弱 ETag、导致所有保存误报 `412 Precondition Failed` 的问题：Worker 额外返回未经转换的 `X-MDTS-ETag`，编辑器优先使用该值进行条件写入。
+- 明确区分 preview 与 production 的 R2 数据：
+  - `wrangler.preview.jsonc` 将 preview 部署绑定到 `mdts-data-preview`。
+  - `wrangler.jsonc` 将正式部署绑定到 `mdts-data-production`。
+  - 新增 `deploy:preview` 与 `deploy:production` 命令，避免依赖容易混淆的 Wrangler 环境覆盖关系。
+  - preview 使用版本上传流程，production 使用正式部署流程，并保留远程环境变量。
+- 新增远程编辑自动化检查，覆盖数据源选择、远程数据集列表、ETag 读取与传递、新路线条件创建以及冲突错误处理。
+- Observation 类型列表新增 `tunnel-entrance`（Tunnel entrance），可用于配置隧道入口观察检查。
+
 ## 2026-09-15 — 结果回放地图与缓存地图
 
 - Exam Result 改为以醒目的通过／失败标识和地图为核心的简洁报告：
