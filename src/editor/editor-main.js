@@ -10,6 +10,12 @@ import {
   writeLocalDataSet,
   writeLocalRouteIndex,
 } from "./local-data-files.js";
+import {
+  listRemoteDataSets,
+  readRemoteDataSet,
+  shouldUseRemoteDataFiles,
+  writeRemoteDataSet,
+} from "./remote-data-files.js";
 import { createRouteStore } from "./route-store.js";
 import { groupIssuesByEvent, validateRoute } from "./route-validator.js";
 import { initializeGeocodingCacheExport } from "./geocoding-cache-export.js";
@@ -57,7 +63,9 @@ let latestIssues = [];
 let toastTimer = null;
 let pendingCriticalTrigger = null;
 let activeDataSet = null;
+let activeEtag = null;
 let dataDirectory = null;
+const usesRemoteDataFiles = shouldUseRemoteDataFiles();
 
 function showToast(message) {
   clearTimeout(toastTimer);
@@ -144,6 +152,7 @@ function createNewRoute(routeId, routeName) {
   };
 
   store.setRoute(route, { dirty: true });
+  activeEtag = null;
   setWorkspaceEnabled(true);
   editorMap.focusRoute(route);
   setDraftOption(route);
@@ -152,7 +161,7 @@ function createNewRoute(routeId, routeName) {
   const url = new URL(window.location.href);
   url.searchParams.delete("route");
   window.history.replaceState({}, "", url);
-  showToast("New route created. Add events, then save the JSON file.");
+  showToast("New route created. Add events, then save the data set.");
 }
 
 function getDocumentKind(document) {
@@ -382,9 +391,16 @@ async function loadRoute(routeId) {
   elements.status.textContent = `Loading ${routeId}…`;
 
   try {
-    const route = await readLocalDataSet(dataDirectory, routeId);
+    const result = usesRemoteDataFiles
+      ? await readRemoteDataSet(routeId)
+      : {
+          document: await readLocalDataSet(dataDirectory, routeId),
+          etag: null,
+        };
+    const route = result.document;
 
     store.setRoute(route);
+    activeEtag = result.etag;
     editorMap.focusRoute(route);
     elements.routeSelector.querySelector("[data-draft-route]")?.remove();
     elements.routeSelector.value = routeId;
@@ -405,25 +421,32 @@ async function loadRoute(routeId) {
   }
 }
 
-async function connectFolder() {
+async function connectData({ forceLocalPicker = false } = {}) {
   if (!confirmDiscardChanges()) return;
 
   elements.connectFolderButton.disabled = true;
-  elements.status.textContent = "Connecting public/data…";
+  elements.status.textContent = usesRemoteDataFiles
+    ? "Connecting R2 data…"
+    : "Connecting public/data…";
 
   try {
-    const directory = await connectDataDirectory({
-      forcePicker: dataDirectory !== null,
-    });
-    const dataSets = await listLocalDataSets(directory);
+    const directory = usesRemoteDataFiles
+      ? null
+      : await connectDataDirectory({ forcePicker: forceLocalPicker });
+    const dataSets = usesRemoteDataFiles
+      ? await listRemoteDataSets()
+      : await listLocalDataSets(directory);
 
     dataDirectory = directory;
+    activeEtag = null;
     activeDataSet = null;
     populateDataSetSelector(dataSets);
     setWorkspaceEnabled(false);
     elements.routeSelector.disabled = !dataSets.some((item) => item.valid);
     elements.newRouteButton.disabled = false;
-    elements.connectFolderButton.textContent = "Change data folder";
+    elements.connectFolderButton.textContent = usesRemoteDataFiles
+      ? "Reload R2 data"
+      : "Change data folder";
 
     const requestedRoute = new URLSearchParams(window.location.search)
       .get("route");
@@ -447,9 +470,11 @@ async function connectFolder() {
       return;
     }
 
-    console.error("Failed to connect data folder:", error);
-    elements.status.textContent = "Could not connect data folder";
-    showToast(error.message || "The data folder could not be connected");
+    console.error("Failed to connect data:", error);
+    elements.status.textContent = usesRemoteDataFiles
+      ? "Could not connect R2 data"
+      : "Could not connect data folder";
+    showToast(error.message || "The data source could not be connected");
   } finally {
     elements.connectFolderButton.disabled = false;
   }
@@ -606,7 +631,11 @@ elements.routeName.addEventListener("change", () => {
   store.updateRoute({ name: elements.routeName.value });
 });
 
-elements.connectFolderButton.addEventListener("click", connectFolder);
+elements.connectFolderButton.addEventListener("click", () => {
+  connectData({
+    forceLocalPicker: !usesRemoteDataFiles && dataDirectory !== null,
+  });
+});
 
 elements.saveButton.addEventListener("click", async () => {
   const errors = latestIssues.filter((item) => item.level === "error");
@@ -620,18 +649,34 @@ elements.saveButton.addEventListener("click", async () => {
 
   try {
     const route = store.getState().route;
-    const path = await writeLocalDataSet(dataDirectory, route);
     const isRoute = route.type !== "observation-checks" &&
       route.type !== "critical-violations";
+    let path;
 
-    if (isRoute) {
-      const dataSets = await writeLocalRouteIndex(dataDirectory);
+    if (usesRemoteDataFiles) {
+      const result = await writeRemoteDataSet(route, {
+        etag: activeEtag,
+        create: activeDataSet?.startsWith("draft:") === true,
+      });
+      path = result.path;
+      activeEtag = result.etag;
+
+      const dataSets = await listRemoteDataSets();
       populateDataSetSelector(dataSets);
       activeDataSet = route.id;
       elements.routeSelector.value = route.id;
     } else {
-      const activeOption = elements.routeSelector.selectedOptions[0];
-      if (activeOption) activeOption.textContent = route.name || route.id;
+      path = await writeLocalDataSet(dataDirectory, route);
+
+      if (isRoute) {
+        const dataSets = await writeLocalRouteIndex(dataDirectory);
+        populateDataSetSelector(dataSets);
+        activeDataSet = route.id;
+        elements.routeSelector.value = route.id;
+      } else {
+        const activeOption = elements.routeSelector.selectedOptions[0];
+        if (activeOption) activeOption.textContent = route.name || route.id;
+      }
     }
 
     store.markSaved();
@@ -644,7 +689,7 @@ elements.saveButton.addEventListener("click", async () => {
   } catch (error) {
     console.error("Failed to save data set:", error);
     elements.status.textContent = "Could not save data set";
-    showToast("The JSON file could not be saved");
+    showToast(error.message || "The data set could not be saved");
   } finally {
     elements.saveButton.disabled = false;
   }
@@ -666,7 +711,13 @@ elements.validationResults.addEventListener("click", (event) => {
 });
 
 setWorkspaceEnabled(false);
-elements.status.textContent = supportsLocalDataFiles()
-  ? "Connect public/data to begin"
-  : "This editor requires desktop Chrome or Edge";
-elements.connectFolderButton.disabled = !supportsLocalDataFiles();
+if (usesRemoteDataFiles) {
+  elements.status.textContent = "Connecting R2 data…";
+  elements.connectFolderButton.textContent = "Reload R2 data";
+  await connectData();
+} else {
+  elements.status.textContent = supportsLocalDataFiles()
+    ? "Connect public/data to begin"
+    : "This editor requires desktop Chrome or Edge";
+  elements.connectFolderButton.disabled = !supportsLocalDataFiles();
+}

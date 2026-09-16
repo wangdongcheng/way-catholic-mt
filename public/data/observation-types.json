@@ -8,6 +8,7 @@
     { "id": "pedestrian-crossing", "label": "Pedestrian crossing" },
     { "id": "no-entry", "label": "No-entry sign" },
     { "id": "road-narrowing", "label": "Road narrowing" },
-    { "id": "road-awareness", "label": "Road awareness" }
+    { "id": "road-awareness", "label": "Road awareness" },
+    { "id": "tunnel-entrance", "label": "Tunnel entrance" }
   ]
 }
