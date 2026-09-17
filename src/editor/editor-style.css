@@ -53,16 +53,7 @@ button {
 }
 
 .brand-block {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 230px;
-}
-
-.editor-brand-logo {
-  width: 92px;
-  height: auto;
-  flex: 0 0 auto;
+  min-width: 150px;
 }
 
 .eyebrow {
@@ -143,10 +134,27 @@ h1 {
   max-width: 380px;
 }
 
+.editor-powered-by {
+  display: flex;
+  flex: 1 1 180px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 150px;
+  color: #64748b;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.editor-powered-by img {
+  width: 104px;
+  height: auto;
+}
+
 .toolbar-actions {
   display: flex;
   gap: 8px;
-  margin-left: auto;
 }
 
 .button,
@@ -784,6 +792,10 @@ textarea:focus-visible {
   .toolbar-field {
     flex: 1 1 220px;
     max-width: none;
+  }
+
+  .editor-powered-by {
+    justify-content: flex-start;
   }
 
   .toolbar-actions {
