@@ -137,18 +137,19 @@ h1 {
 .editor-powered-by {
   display: flex;
   flex: 1 1 180px;
+  align-self: stretch;
   align-items: center;
   justify-content: center;
   gap: 8px;
   min-width: 150px;
   color: #64748b;
-  font-size: 0.7rem;
+  font-size: 0.74rem;
   letter-spacing: 0.04em;
   white-space: nowrap;
 }
 
 .editor-powered-by img {
-  width: 104px;
+  width: 120px;
   height: auto;
 }
 
