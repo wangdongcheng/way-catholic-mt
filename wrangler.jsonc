@@ -2,7 +2,6 @@
   "name": "way-catholic-mt",
   "compatibility_date": "2026-09-03",
   "main": "./worker/index.js",
-
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
@@ -11,7 +10,6 @@
       "/api/admin/*"
     ]
   },
-
   "r2_buckets": [
     {
       "binding": "MDTS_DATA",
@@ -19,9 +17,21 @@
       "preview_bucket_name": "mdts-data-dev"
     }
   ],
-
   "vars": {
     "ACCESS_TEAM_DOMAIN": "https://wdc2mt.cloudflareaccess.com",
     "ACCESS_AUD": "c3732704ca78bc28b72ac58470faaf824a323af9dc8f7b1e079f65b2617ec225"
+  },
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "invocation_logs": true,
+      "persist": true
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "persist": true
+    }
   }
 }
