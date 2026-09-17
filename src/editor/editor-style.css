@@ -601,9 +601,10 @@ h1 {
 }
 
 .editor-statusbar {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   min-height: 38px;
   padding: 7px 16px;
   border-top: 1px solid #cad3e1;
@@ -612,7 +613,22 @@ h1 {
   font-size: 0.78rem;
 }
 
+#editor-status {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editor-product-name {
+  color: #94a3b8;
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.09em;
+  text-align: center;
+}
+
 .status-button {
+  justify-self: end;
   padding: 4px 8px;
   border-radius: 5px;
   background: rgba(255, 255, 255, 0.08);
@@ -825,6 +841,20 @@ textarea:focus-visible {
 @media (max-width: 520px) {
   .editor-toolbar {
     padding: 12px;
+  }
+
+  .editor-statusbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .editor-product-name {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  #editor-status,
+  .editor-statusbar .status-button {
+    grid-row: 2;
   }
 
   .toolbar-actions .button {
