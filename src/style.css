@@ -121,6 +121,24 @@ body {
   margin-top: 24px;
 }
 
+.powered-by {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.powered-by img {
+  width: 112px;
+  height: auto;
+}
+
 .primary-button,
 .secondary-button {
   padding: 11px 18px;

@@ -53,7 +53,16 @@ button {
 }
 
 .brand-block {
-  min-width: 150px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 230px;
+}
+
+.editor-brand-logo {
+  width: 92px;
+  height: auto;
+  flex: 0 0 auto;
 }
 
 .eyebrow {
