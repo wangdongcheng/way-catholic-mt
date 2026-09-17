@@ -54,6 +54,7 @@ button {
 
 .brand-block {
   min-width: 150px;
+  transform: translateY(-7px);
 }
 
 .eyebrow {
@@ -804,6 +805,7 @@ textarea:focus-visible {
 
   .brand-block {
     width: 100%;
+    transform: none;
   }
 
   .toolbar-field {
