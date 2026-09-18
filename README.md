@@ -32,6 +32,18 @@ npm run build
 
 The production output is generated in `dist`.
 
+The Cloudflare deployment commands keep preview and production data separate:
+
+```bash
+npm run deploy:preview
+npm run deploy:production
+```
+
+Preview uses the `mdts-data-preview` R2 bucket, while production uses
+`mdts-data-production`. Both deployments serve public JSON through `/data/*`;
+only authenticated administrator requests may write supported documents
+through `/api/admin/data/*`.
+
 ## Pages
 
 ### Driving page
@@ -62,6 +74,31 @@ Example:
 ```text
 http://localhost:5173/editor.html?route=route-001
 ```
+
+The Editor uses two data workflows:
+
+* On `localhost`, use desktop Chrome or Edge and select the repository's
+  `public/data` folder. The Editor scans the route and global JSON files and
+  saves validated changes directly to that folder.
+* On a deployed HTTPS host, the Editor loads data from R2 automatically.
+  Saving requires Cloudflare Access administrator authentication and writes
+  through the protected `/api/admin/data/*` endpoints.
+
+Existing routes, Observation Checks, and Critical Violations are listed
+dynamically. Creating or saving a route also updates `route-index.json`.
+
+### Cached locations map
+
+```text
+http://localhost:5173/cached.html
+```
+
+This full-screen map loads every shard declared in
+`public/data/geocoding-cache/index.json` and marks each valid cached
+coordinate. It fits the map to all loaded points, displays the total cached
+location count, and shows the location label and coordinates when a marker is
+selected. The page requires the same `VITE_GOOGLE_MAPS_API_KEY` as the driving
+page and Route Editor.
 
 ## URL Parameters
 
@@ -106,14 +143,24 @@ Examples:
 /?route=route-001
 /?route=route-002
 /editor.html?route=route-001
+/editor.html?route=route-003
 ```
 
-The Route Editor currently allows only `route-001` and `route-002` during its initial URL selection. When adding another route to the Editor dropdown, update both:
+The driving page and Route Editor discover available routes from
+`public/data/route-index.json`. During local development, `npm run dev` and
+`npm run build` regenerate this index from the JSON files under
+`public/data/routes`. The Editor also updates the index after saving a route.
+
+### `lat` and `lng`
+
+When both values are present and valid, they override the selected route's
+initial Street View coordinates without changing the route data:
 
 ```text
-editor.html
-src/editor/editor-main.js
+/?route=route-001&lat=35.8880832&lng=14.5029997
 ```
+
+Both parameters are required. Invalid or out-of-range coordinates are ignored.
 
 ### `currentinfo`
 
@@ -515,7 +562,12 @@ score = max(0, 100 - totalPenalty)
 The pass score is 75. The result is `Failed` when the score is below 75, a
 grievous event failed, or a critical violation occurred. The report includes
 the route, duration, total penalty, command and observation performance, missed
-route points, critical violations, and a review of failed events.
+route points, critical violations, and an event map. The map shows the route
+start, the finish after a normal completion, and every evaluated event. Correct
+events use a green check, failed events use a red cross, and grievous failures
+or critical violations use a red exclamation mark. Select a marker to view its
+event details and cached or reverse-geocoded location. The finish marker is not
+shown when a critical violation ends the test early.
 
 ## Examiner Command Events
 
@@ -647,50 +699,24 @@ This format is used by:
 
 ## Creating a Route
 
-### Create the JSON file
+### Connect the data source
 
-Copy an existing route as a starting point:
+Open `/editor.html`. On `localhost`, choose **Connect data** and select the
+repository's `public/data` folder in desktop Chrome or Edge. On a deployed
+HTTPS host, the Editor connects to R2 and builds the data-set menu
+automatically.
 
-```text
-public/data/routes/route-001.json
-```
+### Create the route
 
-Save the copy with a new ID:
+Select **New route**, enter a unique route ID and name, and create the draft.
+Route IDs may contain only letters, numbers, and hyphens. Add and configure the
+required events, including exactly one `route-finish` event as the last event,
+then resolve all validation errors and select **Save**.
 
-```text
-public/data/routes/route-003.json
-```
-
-Update its top-level fields:
-
-```json
-{
-  "id": "route-003",
-  "name": "Route 3"
-}
-```
-
-Keep the route ID, filename, and URL parameter consistent.
-
-### Add the route to the Editor
-
-Add an option to `editor.html`:
-
-```html
-<option value="route-003">Route 3</option>
-```
-
-Add the route ID to the initial-route allowlist in `src/editor/editor-main.js`:
-
-```js
-["route-001", "route-002", "route-003"]
-```
-
-The driving page itself does not use this allowlist. If the JSON file exists, it can be loaded directly with:
-
-```text
-/?route=route-003
-```
+For local data, Save creates `public/data/routes/<route-id>.json` and rebuilds
+`public/data/route-index.json`. For remote data, Save creates the R2 route with
+overwrite protection and updates the remote route index. Keep the route ID,
+filename, and URL parameter consistent.
 
 ### Edit the route
 
@@ -711,36 +737,27 @@ In the Editor:
 7. Configure checkpoint requirements and missed-event penalties.
 8. Configure examiner-command details.
 9. Review Route Validation.
-10. Export the JSON.
+10. Save the data set.
 
-To maintain roadside teaching and test observations, select **Observation Checks**. Exports use the filename `observation-checks.json`.
+To maintain roadside teaching and test observations, select **Observation
+Checks**. Save writes `observation-checks.json` to the active data source.
 
-To maintain two-point serious-error detection, select **Critical Violations**. Place checkpoint A first and forbidden destination B second. Exports use the filename `critical-violations.json`.
+To maintain two-point serious-error detection, select **Critical Violations**.
+Place checkpoint A first and forbidden destination B second. Save writes
+`critical-violations.json` to the active data source.
 
-The Editor currently exports a download. It does not directly overwrite the local repository file.
-
-Replace the corresponding file under:
-
-```text
-public/data/routes
-```
-
-Then review and push manually:
-
-```bash
-git status
-git diff
-git add public/data/routes/route-003.json
-git commit -m "Update route 003"
-git push
-```
+On local data, review the saved JSON and generated route index with Git before
+committing them. On remote data, the Worker validates writes, uses ETags to
+reject stale edits, and backs up replaced objects under the R2 `backups/`
+prefix.
 
 ## Maintaining Event Order
 
 The Route Editor keeps `route-finish` last. New examiner commands are inserted
 immediately before it.
 
-Because array order defines route progress, inspect the exported JSON and ensure events appear in the actual driving order.
+Because array order defines route progress, inspect the saved JSON and ensure
+events appear in the actual driving order.
 
 Each route must contain exactly one `route-finish` event as its final item.
 
@@ -756,10 +773,12 @@ The Editor checks:
 * Start coordinates
 * Presence of the events array
 * Unique event IDs
+* Exactly one final `route-finish` event
 * Coordinates or Pano ID
 * Positive trigger radius
 * Complete Heading ranges
 * Boolean `required` values
+* Boolean `grievousFault` values for examiner commands and observations
 * Non-negative missed-event penalties
 * Supported event types
 * Examiner command text
@@ -769,7 +788,9 @@ The Editor checks:
 * Correct sequence contents
 * Non-negative penalties
 
-Resolve validation errors before exporting the Route JSON.
+Observation Checks and Critical Violations have corresponding document- and
+event-specific validation. Resolve validation errors before saving any data
+set.
 
 ## Geocoding Cache Files
 
@@ -795,11 +816,16 @@ A shard entry defines its filename and geographic bounds:
 
 If the cache becomes too large, create another JSON shard and add it to the manifest with non-overlapping geographic bounds. Entries exported from the browser are assigned to the first matching shard.
 
+Open `/cached.html` to verify the coordinates currently present in all shards.
+The page is read-only; it does not display unexported entries from browser
+local storage and does not modify cache files.
+
 ## Current Demo Routes
 
 ```text
 /?route=route-001
 /?route=route-002
+/?route=route-003
 ```
 
 Editor URLs:
@@ -807,6 +833,7 @@ Editor URLs:
 ```text
 /editor.html?route=route-001
 /editor.html?route=route-002
+/editor.html?route=route-003
 ```
 
 Diagnostic URLs:
@@ -814,4 +841,10 @@ Diagnostic URLs:
 ```text
 /?route=route-001&currentinfo=1
 /editor.html?route=route-001&exportcache=1
+```
+
+Cache map URL:
+
+```text
+/cached.html
 ```
