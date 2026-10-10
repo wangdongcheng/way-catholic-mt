@@ -12,16 +12,16 @@ This file defines the working rules for AI coding agents in the entire repositor
 ## Authorization Gate
 
 - Analysis, explanation, design, review, and read-only inspection do not authorize code changes.
-- An explicit request to implement, update, fix, add, or remove repository content authorizes scoped file edits.
+- Scoped repository edits require `start coding`, `commit to preview`, or `push to preview` as an operative instruction in the current request. A request to implement, update, fix, add, or remove content without one of these phrases does not authorize edits.
 - Do not commit unless the current request contains `commit to preview` or `push to preview` as an operative instruction.
 - Do not push unless the current request contains `push to preview` as an operative instruction.
-- Commit and push phrases are case-sensitive and must be spelled exactly. Similar wording, translations, partial phrases, or quoted examples do not grant that action.
-- Commit and push authorization applies only to the current request.
+- Authorization phrases are case-sensitive and must be spelled exactly. Similar wording, translations, partial phrases, or quoted examples do not grant that action.
+- Edit, commit, and push authorization applies only to the current request.
 - When the user does not clearly request a repository change, keep the task read-only.
 
 ## Git and Push Rules
 
-- 只有当用户明确说出 `start coding` 时，才开始修改代码；用户明确说出 `commit to preview` 时，也授权修改代码并将本次修改提交到 `preview` 分支。仅有 `start coding` 不授权提交，只有 `commit to preview` 才授权提交到 `preview`。该次 commit message 必须先写归纳总结本次修改的英文说明，再附上上下文中用户关于本次修改的原话，保留中文原文，不翻译、不改写。
+- `start coding` authorizes scoped repository edits without committing or pushing. `commit to preview` authorizes scoped edits and a local commit on `preview`, without pushing. `push to preview` authorizes scoped edits, a local commit on `preview` when needed, and pushing to `preview`.
 - Never push directly to `main`.
 - The only branch an agent may push to is `preview`.
 - Do not create or push another branch unless the user explicitly changes these rules.
@@ -31,10 +31,9 @@ This file defines the working rules for AI coding agents in the entire repositor
 - If `origin/preview` moves during a push workflow, inspect the new commits and safely rebase or rebuild the change on the latest head. Do not overwrite concurrent work.
 - Preserve unrelated user changes in a dirty worktree. Never reset, discard, or rewrite them.
 - Keep each commit focused on the requested task.
-- Commit messages must be entirely in English, including the subject and body.
+- Commit subjects and explanatory summaries must be in English. After the English summary, include the user's original wording about the requested change from the conversation, preserving its original language, including Chinese, without translation or rewriting.
 - Prefix AI-authored commit subjects with `<version>-<model>-<reasoning>: `.
-- Use `6.1-Sol-medium: ` by if can't fetch these information from context.
-- Use the version, model, and reasoning values supplied by session metadata when available. If any value is unavailable, ask the user to confirm it rather than inferring it.
+- Use the version, model, and reasoning values supplied by session metadata when all three are available. If any value is unavailable, use the default prefix `6.1-Sol-medium: ` without inferring missing values or asking for confirmation.
 
 ## Scope Discipline
 
@@ -108,5 +107,5 @@ If a relevant check cannot run, report that clearly instead of claiming full ver
 
 - For implementation tasks, state what changed, which files were affected, and which relevant checks passed or could not run.
 - If a push was authorized, confirm that only `preview` changed and provide the commit link.
-- If `commit to preview` was authorized, provide the local commit SHA and title and explicitly state that it was not pushed.
+- If a local commit was created, provide its SHA and title. If pushing was not authorized, explicitly state that it was not pushed.
 - If the user requested an implementation but it was not performed, state that no repository files were changed and explain why. Ordinary read-only answers do not need this boilerplate.
