@@ -21,6 +21,7 @@ This file defines the working rules for AI coding agents in the entire repositor
 
 ## Git and Push Rules
 
+- 只有当用户明确说出 `start coding` 时，才开始修改代码；用户明确说出 `commit to preview` 时，也授权修改代码并将本次修改提交到 `preview` 分支。仅有 `start coding` 不授权提交，只有 `commit to preview` 才授权提交到 `preview`。该次 commit message 必须先写归纳总结本次修改的英文说明，再附上上下文中用户关于本次修改的原话，保留中文原文，不翻译、不改写。
 - Never push directly to `main`.
 - The only branch an agent may push to is `preview`.
 - Do not create or push another branch unless the user explicitly changes these rules.
@@ -32,7 +33,7 @@ This file defines the working rules for AI coding agents in the entire repositor
 - Keep each commit focused on the requested task.
 - Commit messages must be entirely in English, including the subject and body.
 - Prefix AI-authored commit subjects with `<version>-<model>-<reasoning>: `.
-- Use `5.6-Sol-medium: ` by if can't fetch these information from context.
+- Use `6.1-Sol-medium: ` by if can't fetch these information from context.
 - Use the version, model, and reasoning values supplied by session metadata when available. If any value is unavailable, ask the user to confirm it rather than inferring it.
 
 ## Scope Discipline
